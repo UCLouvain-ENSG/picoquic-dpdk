@@ -154,9 +154,9 @@ int just_once = 0;
 int nb_of_repetition = 1;
 
 // default values
-int MAX_PKT_BURST = 32;
+int MAX_PKT_BURST_RX = 32;
 // currently best value is 1 here, not sure why yet
-int MAX_PKT_BURST_TX = 1;
+int MAX_PKT_BURST_TX = 32;
 int dpdk = 0;
 int handshake_test = 0;
 int request_test = 0;
@@ -244,7 +244,7 @@ int dpdk_init_mbuf_txbuffer(uint16_t portid, int index)
     index_of_X = strlen(tx_buffer_name) - 1;
     tx_buffer_name[index_of_X] = char_i;
     tx_buffers[index] = rte_zmalloc_socket(tx_buffer_name,
-                                           RTE_ETH_TX_BUFFER_SIZE(MAX_PKT_BURST), 0,
+                                           RTE_ETH_TX_BUFFER_SIZE(MAX_PKT_BURST_TX), 0,
                                            rte_eth_dev_socket_id(portid));
     if (tx_buffers[index] == NULL)
     {
@@ -475,7 +475,7 @@ int dpdk_init_port_server(uint16_t nb_of_queues)
         index_of_X = strlen(tx_buffer_name) - 1;
         tx_buffer_name[index_of_X] = char_i;
         tx_buffers[queueid] = rte_zmalloc_socket(tx_buffer_name,
-                                                 RTE_ETH_TX_BUFFER_SIZE(MAX_PKT_BURST), 0,
+                                                 RTE_ETH_TX_BUFFER_SIZE(MAX_PKT_BURST_RX), 0,
                                                  rte_eth_dev_socket_id(0));
         if (tx_buffers[queueid] == NULL)
         {
@@ -525,7 +525,9 @@ client_job(void *arg)
                     nb_packets_before_update,
                     client_scenario, handshake_test, request_test,
                     dpdk,
-                    MAX_PKT_BURST, main_port, queueid, &addr_from, &eth_addr, mb_pools[main_port], tx_buffers[main_port],&proxy_ctx);
+                    MAX_PKT_BURST_RX,
+                    MAX_PKT_BURST_TX,  
+                    main_port, queueid, &addr_from, &eth_addr, mb_pools[main_port], tx_buffers[main_port],&proxy_ctx);
     }
     else
     {
@@ -548,7 +550,9 @@ client_job(void *arg)
                                 nb_packets_before_update,
                                 client_scenario, handshake_test, request_test,
                                 dpdk,
-                                MAX_PKT_BURST, portid, queueid, &addr_from, &eth_addr, mb_pools[portid], tx_buffers[portid],NULL);
+                                MAX_PKT_BURST_RX,
+                                MAX_PKT_BURST_TX,  
+                                portid, queueid, &addr_from, &eth_addr, mb_pools[portid], tx_buffers[portid],NULL);
                     counter++;
                     gettimeofday(&current_time, NULL);
                 }
@@ -567,7 +571,9 @@ client_job(void *arg)
                             nb_packets_before_update,
                             client_scenario, handshake_test, request_test,
                             dpdk,
-                            MAX_PKT_BURST, portid, queueid, &addr_from, &eth_addr, mb_pools[portid], tx_buffers[portid],NULL);
+                            MAX_PKT_BURST_RX, 
+                            MAX_PKT_BURST_TX,
+                            portid, queueid, &addr_from, &eth_addr, mb_pools[portid], tx_buffers[portid],NULL);
                 sleep(2);
             }
         }
@@ -596,7 +602,8 @@ server_job(void *arg)
                 demo_config,
                 just_once,
                 dpdk,
-                MAX_PKT_BURST, portid, &addr_from, NULL, mb_pools[main_port], tx_buffers[demo_config->queueid],&proxy_ctx);
+                MAX_PKT_BURST_RX,
+                MAX_PKT_BURST_TX,  portid, &addr_from, NULL, mb_pools[main_port], tx_buffers[demo_config->queueid],&proxy_ctx);
     
 
     }
@@ -606,7 +613,8 @@ server_job(void *arg)
                 demo_config,
                 just_once,
                 dpdk,
-                MAX_PKT_BURST, portid, &addr_from, NULL, mb_pools[portid], tx_buffers[demo_config->queueid],NULL);
+                MAX_PKT_BURST_RX,
+                MAX_PKT_BURST_TX,  portid, &addr_from, NULL, mb_pools[portid], tx_buffers[demo_config->queueid],NULL);
     }
 }
 
@@ -701,7 +709,8 @@ int main(int argc, char **argv)
     struct sockaddr_storage bind[MAX_BIND];
     int bind_n = 0;
     (*(struct sockaddr_in *)(&bind[0])).sin_family = AF_INET;
-    (*(struct sockaddr_in *)(&bind[0])).sin_addr.s_addr = inet_addr("0.0.0.0");
+    (*(struct sockaddr_in *)(&bind[0])).sin_family = htons(55);
+    (*(struct sockaddr_in *)(&bind[0])).sin_addr.s_addr = inet_addr("10.100.0.2");
 
     int isIpv4 = 1;
     int is_client = 0;
@@ -732,9 +741,10 @@ int main(int argc, char **argv)
     (void)WSA_START(MAKEWORD(2, 2), &wsaData);
 #endif
     picoquic_config_init(&config);
-
-    memcpy(option_string, "u:f:A:N:@:2:d:3H1r", 18);
-    ret = picoquic_config_option_letters(option_string + 18, sizeof(option_string) - 18, NULL);
+    char params[] = "u:f:A:N:@:*:2:d:3H1r";
+    int length = strlen(params);
+    memcpy(option_string, params, length);
+    ret = picoquic_config_option_letters(option_string + length, sizeof(option_string) - length, NULL);
 
     if (ret == 0)
     {
@@ -801,9 +811,13 @@ int main(int argc, char **argv)
                 }
                 break;
             case '@':
-                MAX_PKT_BURST = atoi(optarg);
+                MAX_PKT_BURST_RX = atoi(optarg);
                 break;
-            case 'N':;
+            case '*':
+                MAX_PKT_BURST_TX = atoi(optarg);
+                break;
+            case 'N':
+                ;
                 int rep = atoi(optarg);
                 if (rep > 0)
                 {
@@ -944,7 +958,7 @@ int main(int argc, char **argv)
             {
                 ret = quic_server(server_name, &config,
                 &demo_configs[0],
-                just_once, dpdk, MAX_PKT_BURST, 0,
+                just_once, dpdk, MAX_PKT_BURST_RX,MAX_PKT_BURST_TX, 0,
                 NULL, NULL, NULL, NULL, NULL);
             }
         }
@@ -1019,6 +1033,7 @@ int main(int argc, char **argv)
                 {
                     struct timeval start_time;
                     struct timeval current_time;
+                    
                     for (int i = 0; i < nb_of_repetition; i++){
                         gettimeofday(&start_time, NULL);
                         gettimeofday(&current_time, NULL);
@@ -1026,7 +1041,9 @@ int main(int argc, char **argv)
                         while ((current_time.tv_sec - start_time.tv_sec) < 20)
                         {
                             ret = quic_client(server_name, server_port, &config,
-                                            force_migration, nb_packets_before_update, client_scenario, handshake_test, request_test, dpdk, MAX_PKT_BURST, 0, 0, NULL, NULL, NULL, NULL,NULL);
+                                            force_migration, nb_packets_before_update, client_scenario, handshake_test, request_test, dpdk, 
+                                            MAX_PKT_BURST_RX,
+                                            MAX_PKT_BURST_TX,  0, 0, NULL, NULL, NULL, NULL,NULL);
                             counter++;
                             gettimeofday(&current_time, NULL);
                         }
@@ -1041,7 +1058,9 @@ int main(int argc, char **argv)
                     for (int i = 0; i < nb_of_repetition; i++)
                     {
                         ret = quic_client(server_name, server_port, &config,
-                                          force_migration, nb_packets_before_update, client_scenario, handshake_test, request_test, dpdk, MAX_PKT_BURST, 0, 0, NULL, NULL, NULL, NULL,NULL);
+                                          force_migration, nb_packets_before_update, client_scenario, handshake_test, request_test, dpdk, 
+                                          MAX_PKT_BURST_RX,
+                                          MAX_PKT_BURST_TX,  0, 0, NULL, NULL, NULL, NULL,NULL);
                         sleep(2);
                     }
                 }

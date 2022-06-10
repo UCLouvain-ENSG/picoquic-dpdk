@@ -50,7 +50,8 @@ int quic_server(const char* server_name,
                         demo_config_t * demo_config,
                         int just_once,
                         int dpdk,
-                        int batching_size, 
+                        int batching_size_rx,
+                        int batching_size_tx, 
                         unsigned portid,
                         struct sockaddr_storage *addr_from,
                         struct rte_ether_addr *mac_dst,
@@ -135,7 +136,7 @@ int quic_server(const char* server_name,
             ret = picoquic_packet_loop_dpdk(qserver, config->server_port, 0, config->dest_if,
                 config->socket_buffer_size, config->do_not_use_gso, server_loop_cb, &loop_cb_ctx,
                 &demo_config->is_running,
-                portid, demo_config->queueid, batching_size, batching_size, *addr_from,
+                portid, demo_config->queueid, batching_size_rx, batching_size_tx, *addr_from,
                 NULL, NULL, mb_pool, tx_buffer);
         }
         else{
