@@ -503,7 +503,7 @@ client_job(void *arg)
     struct sockaddr_storage addr_from;
 
     (*(struct sockaddr_in *)(&addr_from)).sin_family = AF_INET;
-    (*(struct sockaddr_in *)(&addr_from)).sin_port = htons(2155);
+    (*(struct sockaddr_in *)(&addr_from)).sin_port = htons(4443);
     (*(struct sockaddr_in *)(&addr_from)).sin_addr.s_addr = rte_cpu_to_be_32(ip);
 
     // proxy_mode
@@ -709,7 +709,7 @@ int main(int argc, char **argv)
     struct sockaddr_storage bind[MAX_BIND];
     int bind_n = 0;
     (*(struct sockaddr_in *)(&bind[0])).sin_family = AF_INET;
-    (*(struct sockaddr_in *)(&bind[0])).sin_family = htons(55);
+    (*(struct sockaddr_in *)(&bind[0])).sin_port = htons(4443);
     (*(struct sockaddr_in *)(&bind[0])).sin_addr.s_addr = inet_addr("10.100.0.2");
 
     int isIpv4 = 1;
@@ -785,7 +785,7 @@ int main(int argc, char **argv)
                         bind[bind_n].ss_family = AF_INET6;
                     }
                  } else {
-                     bind[bind_n].ss_family = AF_INET;
+                    bind[bind_n].ss_family = AF_INET;
                  }
                 if (ret != 1) {
                             fprintf(stderr, "Invalid IPv4 or IPv6 address: %s\n", optarg);
