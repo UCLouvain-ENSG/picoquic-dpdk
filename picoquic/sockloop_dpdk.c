@@ -549,6 +549,7 @@ int picoquic_packet_loop_dpdk(picoquic_quic_t *quic,
         int packet_received = false;
         for (int i = 0; i < pkts_recv; i++)
         {
+            current_time = picoquic_current_time();
             struct rte_ether_hdr *eth_hdr = rte_pktmbuf_mtod(pkts_burst[i], struct rte_ether_hdr *);
             // receiv_counter++;
             // printf("received packets ethernet : %u\n",portid);
@@ -589,6 +590,12 @@ int picoquic_packet_loop_dpdk(picoquic_quic_t *quic,
                     (*(struct sockaddr_in *)(&addr_to)).sin_family = AF_INET;
                     (*(struct sockaddr_in *)(&addr_to)).sin_port = dst_port;
                     (*(struct sockaddr_in *)(&addr_to)).sin_addr.s_addr = dst_addr;
+
+                    
+                    // printf("src_address: %d\n", src_addr);
+                    // printf("dst_address :%d\n",dst_addr);
+                    // printf("src_port : %d\n",htons(src_port));
+                    // printf("dst_port : %d\n",htons(src_port));
 
                     unsigned char *payload = (unsigned char *)(udp_hdr + 1);
                     rte_be16_t length = udp_hdr->dgram_len;
