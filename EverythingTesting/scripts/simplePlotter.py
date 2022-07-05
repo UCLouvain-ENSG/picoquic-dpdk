@@ -59,9 +59,10 @@ def comparison_plot_bar(items,title,yLabel,outputFileName):
     plt.title(title)
     plt.ylabel(yLabel)
     plt.bar(labels,data)
+    plt.grid(True)
     plt.savefig(outputFileName)
     
-def comparison_plot_box(items,title,yLabel,outputFileName):
+def comparison_plot_box(items,title,yLabel,outputFileName, xLabel = None):
     data = [i.getData() for i in items]
     labels = [i.label for i in items]
     fig, ax = plt.subplots()
@@ -69,6 +70,9 @@ def comparison_plot_box(items,title,yLabel,outputFileName):
     ax.set_xticklabels(labels)
     ax.set_title(title)
     ax.set_ylabel(yLabel)
+    if xLabel != None:
+        ax.set_xlabel = xLabel
+    plt.grid(True)
     plt.savefig(outputFileName)
 
     
@@ -80,11 +84,26 @@ def throughput_comparison_plot_bar():
     
     
 def throughput_comparison_plot_box():
-    item1 = ItemToPlot("nodpdk",get_full_data,("../data/output_nodpdk_tp_enc.txt",throughput_index))
-    item2 = ItemToPlot("dpdk",get_full_data,("../data/output_dpdk_tp_enc.txt",throughput_index))
-    comparison_plot_box([item1,item2],"Throughput comparison","Throughput(Mbps)","../plots/Throughput_box.png")
+    item1 = ItemToPlot("picoquic",get_full_data,("../data/throughputBBR_nodpdk.txt",throughput_index))
+    item2 = ItemToPlot("picoquic-dpdk",get_full_data,("../data/throughputBBR_dpdk.txt",throughput_index))
+    comparison_plot_box([item1,item2],"","Throughput(Mbps)","../plots/Throughput_box.png")
     
     
+def handshake_time_comparison_plot_box():
+    def dataFunction(file,index):
+        data = get_full_data(file,index)
+        return [d*(10**6) for d in data]
+    item1 = ItemToPlot("picoquic",dataFunction,("../data/handshakeBBRfixed_nodpdk.txt",time_index))
+    item2 = ItemToPlot("picoquic-dpdk",dataFunction,("../data/handshakeBBRfixed_dpdk.txt",time_index))
+    comparison_plot_box([item1,item2],"","Request time (us)","../plots/handshake_time_box.png")
+    
+def handshake_time_comparison_plot_box_clean():
+    def dataFunction(file,index):
+        data = get_full_data(file,index)
+        return [d*(10**6) for d in data if d*(10**6) < 50000]
+    item1 = ItemToPlot("picoquic",dataFunction,("../data/handshakeBBR_nodpdk.txt",time_index))
+    item2 = ItemToPlot("picoquic-dpdk",dataFunction,("../data/handshakeBBR_dpdk.txt",time_index))
+    comparison_plot_box([item1,item2],"","Request time (us)","../plots/handshake_time_box_clean.png")
     
 def handshake_comparison_plot():
     def dataFunction(file,index):
@@ -171,6 +190,30 @@ def batching_plot_CCalgo():
         item = ItemToPlot("{}".format(str(CC)),get_full_data,("../data/CC_big_{}_dpdk.txt".format(str(CC)),throughput_index))
         items.append(item)
     comparison_plot_box(items, "Batching size impact on throughput","Throughput (Mbps)","../plots/batching_impact_CCalgo.png")
+    
+def batching_plot_without_rereceive():
+    items = []
+    for batching in [4,8,16,32,64]:
+        item = ItemToPlot("{}".format(str(batching)),get_full_data,("../data/throughput_{}_fixed_80GBfixed2_dpdk.txt".format(str(batching)),throughput_index))
+        items.append(item)
+    comparison_plot_box(items, "Batching size impact on throughput (80GB file without rereceive)","Throughput (Mbps)","../plots/batching_norereceive_80GB.png")
+ 
+def batching_plot_with_rereceive():
+    items = []
+    items.append(ItemToPlot("(1,32)",get_full_data,("../data/throughput_1T32R_fixed_80GBwrereceive_dpdk.txt",throughput_index)))
+    for batching in [4,8,16,32,64]:
+        item = ItemToPlot("{}".format(str(batching)),get_full_data,("../data/throughput_{}_fixed_80GBwrereceive_dpdk.txt".format(str(batching)),throughput_index))
+        items.append(item)
+    comparison_plot_box(items, "Batching size impact on throughput (80GB)","Throughput (Mbps)","../plots/batching_rereceive_80GB.png")
+    
+    
+def batching_plot_with_128RX():
+    items = []
+    for batching in [4,8,16,32,64]:
+        item = ItemToPlot("{}".format(str(batching)),get_full_data,("../data/throughput_{}_fixed_10GB_RX128_dpdk.txt".format(str(batching)),throughput_index))
+        items.append(item)
+    comparison_plot_box(items, "Batching size impact on throughput (10GB) fixed 128RX","Throughput (Mbps)","../plots/batching_10GB_128RX.png")
+
 
 ###BATCHING###
 
@@ -187,7 +230,11 @@ if __name__ == "__main__":
     #proxy_TCP()
     #proxy_TCP_vs_UDP()
     #batching32_plot()
-    batching_plot_CCalgo()
+    #batching_plot_CCalgo()
+    #batching_plot_without_rereceive()
+    #batching_plot_with_128RX()
+    handshake_time_comparison_plot_box()
+    #handshake_time_comparison_plot_box_clean()
     
    
 

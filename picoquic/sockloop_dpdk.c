@@ -396,6 +396,7 @@ in6_fast_cksum(const struct in6_addr *saddr,
 void
 drop_callback(struct rte_mbuf **pkts, uint16_t unsent,
 		void *userdata) {
+    printf("unsent : %u\n",unsent);
     printf("PACKET DROPPED!\n");
 }
 
@@ -534,11 +535,12 @@ int picoquic_packet_loop_dpdk(picoquic_quic_t *quic,
     bool need_to_alloc = true;
     bool should_i_print = true;
     bool should_i_print2 = true;
+   
     while (ret == 0 && *is_running)
     {
         int64_t delta_t = 0;
         unsigned char received_ecn = 0;
-
+        bool pkt_received = false;
         if_index_to = 0;
         pkts_recv = rte_eth_rx_burst(portid, queueid, pkts_burst, MAX_PKT_BURST_RX);
 
@@ -565,7 +567,7 @@ int picoquic_packet_loop_dpdk(picoquic_quic_t *quic,
 
                 if (ip_hdr->next_proto_id == IPPROTO_UDP)
                 {
-                    //packet_received = true; 
+                    packet_received = true; 
                     udp_hdr = (struct rte_udp_hdr *)((unsigned char *)ip_hdr + sizeof(struct rte_ipv4_hdr));
 
                     if ((ip_hdr->type_of_service & 0b11) == 0b11)

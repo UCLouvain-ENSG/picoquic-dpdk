@@ -25,8 +25,9 @@ serverName = 'server'
 clientName = 'client1'
 process_name = 'dpdk_picoquicdemo'
 dpdk1Client = '--dpdk -l 0-1 -a 0000:8a:00.1 -- -A 50:6b:4b:f3:7c:71'
-dpdk8Client = '--dpdk -l 0-15 {} -- -A 50:6b:4b:f3:7c:71'.format(retrieve_cards())
+dpdk15Client = '--dpdk -l 0-15 {} -- -A 50:6b:4b:f3:7c:71'.format(retrieve_cards())
 dpdk1Server = '--dpdk -l 0-1 -a 0000:51:00.1 --'
+dpdkVarServer = '--dpdk -l 0-{} -a 0000:51:00.1 --'
 nodpdk = 'nodpdk'
 
 
@@ -77,9 +78,43 @@ def test_generic(argsClient,argsServer,isComparison):
         killing_process = kill_process(serverName,str(intPid))
         killing_process.wait()
     print("FINISHED")
+    
+    
+def test_generic_repeting_client(argsClient,argsServer,isComparison,repetition):
+    run_server(argsServer)
+    time.sleep(5)
+    for it in range(repetition):
+        client_process = run_client(argsClient)
+        client_process.wait()
+        time.sleep(5)
+    
+    pid = get_pid_process(serverName,process_name)
+    intPid = int(pid)
+    killing_process = kill_process(serverName,str(intPid))
+    killing_process.wait()
+    
+    if isComparison:
+        argsClientNoDpdk = argsClient.copy()
+        argsClientNoDpdk["eal"] = nodpdk
+        argsClientNoDpdk["output_file"] = argsClientNoDpdk["output_file"].replace("dpdk","nodpdk")
+        
+        argsServerNoDpdk = argsServer.copy()
+        argsServerNoDpdk["eal"] = nodpdk
+        
+        run_server(argsServerNoDpdk)
+        for it in range(repetition):
+            client_process = run_client(argsClientNoDpdk)
+            client_process.wait()
+            time.sleep(5)
+        pid = get_pid_process(serverName,process_name)
+        intPid = int(pid)
+        killing_process = kill_process(serverName,str(intPid))
+        killing_process.wait()    
+    print("FINISHED")
+    
 def test_server_scaling():
     
-    clientArgs = {"eal" : dpdk8Client,
+    clientArgs = {"eal" : dpdk16Client,
                   "args": "-D ",
                   "output_file":"server_scaling_dpdk.txt",
                   "ip_and_port" : "10.100.0.2 5600",
@@ -97,62 +132,110 @@ def test_server_scaling():
     
 def test_throughput():
     ##Throughput test
+    for it in range(15):
+        clientArgsDpdk = {"eal" : dpdk1Client,
+                    "args": "-D",
+                    "output_file":"throughputBBR_dpdk.txt",
+                    "ip_and_port" : "10.100.0.2 4443",
+                    "request" : "/20000000000",
+                    "keyword" : "Mbps"}
+        
+        serverArgsDpdk = {"eal" : dpdk1Server,
+                    "args" : "",
+                    "port" : "-p 4443"}
+        test_generic(clientArgsDpdk,serverArgsDpdk,True)
+        time.sleep(5)
+        
+        
+    
+def test_handshake_simple():
+    ##Throughput test
     clientArgsDpdk = {"eal" : dpdk1Client,
-                  "args": "-D -N 10",
-                  "output_file":"throughput_dpdk.txt",
-                  "ip_and_port" : "10.100.0.2 5600",
-                  "request" : "/20000000000",
-                  "keyword" : "Mbps"}
-       
+                "args": "-D",
+                "output_file":"handshakeBBRfixed_dpdk.txt",
+                "ip_and_port" : "10.100.0.2 4443",
+                "request" : "/8",
+                "keyword" : "Mbps"}
+    
     serverArgsDpdk = {"eal" : dpdk1Server,
-                  "args" : "",
-                  "port" : "-p 5600"}
-    
-    test_generic(clientArgsDpdk,serverArgsDpdk,True)
-    
+                "args" : "",
+                "port" : "-p 4443"}
+    test_generic_repeting_client(clientArgsDpdk,serverArgsDpdk,True,50)
+   
+def test_RSS_15():
+    for server_core in range(11,16): 
+        clientArgsDpdk = {"eal" : dpdk15Client,
+                    "args": "-D",
+                    "output_file":"TP_{}core_dpdk.txt".format(str(server_core)),
+                    "ip_and_port" : "10.100.0.2 4443",
+                    "request" : "/10000000000",
+                    "keyword" : "Mbps"}
+        
+        serverArgsDpdk = {"eal" : dpdkVarServer.format(str(server_core)),
+                    "args" : "",
+                    "port" : "-p 4443"}
+        test_generic_repeting_client(clientArgsDpdk,serverArgsDpdk,False,8)
+        time.sleep(10)
+     
     
 def test_handshake():
     #Testing handshake
-    clientArgsDpdk = {"eal" : dpdk1Client,
-                  "args": "-H -D",
-                  "output_file":"handshake_dpdk.txt",
-                  "ip_and_port" : "10.100.0.2 5600",
-                  "request" : "/100",
-                  "keyword" : "served",
-                  "reps" : 10}   
-    serverArgsDpdk = {"eal" : dpdk1Server,
-                  "args" : "",
-                  "port" : "-p 5600"}
-    test_generic(clientArgsDpdk,serverArgsDpdk,True)
+    for it in range(10):
+        clientArgsDpdk = {"eal" : dpdk1Client,
+                    "args": "-H -D",
+                    "output_file":"handshake_new_dpdk.txt",
+                    "ip_and_port" : "10.100.0.2 4443",
+                    "request" : "/100",
+                    "keyword" : "served"}   
+        serverArgsDpdk = {"eal" : dpdk1Server,
+                    "args" : "",
+                    "port" : "-p 4443"}
+        test_generic(clientArgsDpdk,serverArgsDpdk,True)
     
 def test_request():
     #Testing requests
+    
     clientArgsDpdk = {"eal" : dpdk1Client,
-                  "args": "-3 -D -N 10",
-                  "output_file":"request_dpdk.txt",
-                  "ip_and_port" : "10.100.0.2 5600",
-                  "request" : "*10000000:/100000",
-                  "keyword" : "served"}   
+                "args": "-D",
+                "output_file":"request_100_dpdk.txt",
+                "ip_and_port" : "10.100.0.2 4443",
+                "request" : "*100:/20000",
+                "keyword" : "Mbps"}   
     serverArgsDpdk = {"eal" : dpdk1Server,
-                  "args" : "",
-                  "port" : "-p 5600"}
-    serverArgsNoDpdk = serverArgsDpdk.copy()
-    serverArgsNoDpdk["eal"] = nodpdk
-    test_generic(clientArgsDpdk,serverArgsDpdk,True)
+                "args" : "",
+                "port" : "-p 4443"}
+    test_generic_repeting_client(clientArgsDpdk,serverArgsDpdk,True,15)
+  
     
 def test_batching():
+    for it in range(5):
+        clientArgsDpdk = {"eal" : dpdk1Client,
+                    "args": "-D -* 1 -@ 32 -G cubic",
+                    "output_file":"throughput_1,32_fixed_80GBwrereceive_dpdk.txt",
+                    "ip_and_port" : "10.100.0.2 4443",
+                    "request" : "/80000000000",
+                    "keyword" : "Mbps"}
+        
+        serverArgsDpdk = {"eal" : dpdk1Server,
+                    "args" : " -G cubic -* 1 -@ 32",
+                    "port" : "-p 4443"}
+        test_generic(clientArgsDpdk,serverArgsDpdk,False)
+        time.sleep(5)
+    time.sleep(10)
+        
+def test_batching_fixed_RX():
     for i in [4,8,16,32,64]:
         for it in range(5):
             clientArgsDpdk = {"eal" : dpdk1Client,
-                        "args": "-D -* {} -@ {}".format(str(i),str(i)),
-                        "output_file":"throughput_{}_dpdk.txt".format(str(i)),
-                        "ip_and_port" : "10.100.0.2 5600",
-                        "request" : "/10000000000",
+                        "args": "-D -* {} -@ 128 -G cubic".format(str(i)),
+                        "output_file":"throughput_{}_fixed_10GB_RX128_dpdk.txt".format(str(i)),
+                        "ip_and_port" : "10.100.0.2 4443",
+                        "request" : "/20000000000",
                         "keyword" : "Mbps"}
             
             serverArgsDpdk = {"eal" : dpdk1Server,
-                        "args" : "-* {}".format(str(i)),
-                        "port" : "-p 5600"}
+                        "args" : " -G cubic -* {} -@ 128".format(str(i)),
+                        "port" : "-p 4443"}
             test_generic(clientArgsDpdk,serverArgsDpdk,False)
             time.sleep(5)
         time.sleep(10)
@@ -164,7 +247,7 @@ def test_batching2():
                         "args": "-D -* {}".format(str(i)),
                         "output_file":"throughput32_{}_dpdk.txt".format(str(i)),
                         "ip_and_port" : "10.100.0.2 5600",
-                        "request" : "/10000000000",
+                        "request" : "/80000000000",
                         "keyword" : "Mbps"}
             
             serverArgsDpdk = {"eal" : dpdk1Server,
@@ -245,7 +328,14 @@ if __name__ == "__main__":
     #test_congestion_dpdk()
     #test_congestion_nodpdk()
     #test_batching_noCC_noPacing()
-    test_congestion_big_dpdk()
+    #test_congestion_big_dpdk()
+    #test_batching()
+    #test_batching()
+    #test_throughput()
+    #test_handshake_simple()
+    #test_handshake()
+    #test_request()
+    test_RSS_15()
         
     
 

@@ -152,10 +152,11 @@ char *client_scenario = NULL;
 picoquic_quic_config_t config;
 int just_once = 0;
 int nb_of_repetition = 1;
+int change_ip_client = 0;
 
 // default values
 int MAX_PKT_BURST_RX = 32;
-// currently best value is 1 here, not sure why yet
+
 int MAX_PKT_BURST_TX = 32;
 int dpdk = 0;
 int handshake_test = 0;
@@ -495,7 +496,14 @@ client_job(void *arg)
     unsigned lcore_id = rte_lcore_id();
 
     // giving a different IP for each client using the portid
-    uint32_t ip = (198U << 24) | (18 << 16) | (portid << 8) | 1;
+    // two variant here, usefull when testing RSS
+    uint32_t ip;
+    if(change_ip_client){
+        ip = (20U << 24) | (portid << 16) | (0 << 8) | 1;
+    }
+    else{
+        ip = (198U << 24) | (18 << 16) | (portid << 8) | 1;
+    }
     struct in_addr ip_addr;
     ip_addr.s_addr = rte_cpu_to_be_32(ip);
     printf("The IP address of client %u is %u\n", portid, rte_cpu_to_be_32(ip));
@@ -708,6 +716,7 @@ int main(int argc, char **argv)
     char default_server_key_file[512];
     struct sockaddr_storage bind[MAX_BIND];
     int bind_n = 0;
+    //should use those values for client
     (*(struct sockaddr_in *)(&bind[0])).sin_family = AF_INET;
     (*(struct sockaddr_in *)(&bind[0])).sin_port = htons(4443);
     (*(struct sockaddr_in *)(&bind[0])).sin_addr.s_addr = inet_addr("10.100.0.2");
@@ -741,7 +750,7 @@ int main(int argc, char **argv)
     (void)WSA_START(MAKEWORD(2, 2), &wsaData);
 #endif
     picoquic_config_init(&config);
-    char params[] = "u:f:A:N:@:*:2:d:3H1r";
+    char params[] = "u:f:A:N:@:*:2:d:3H1rX";
     int length = strlen(params);
     memcpy(option_string, params, length);
     ret = picoquic_config_option_letters(option_string + length, sizeof(option_string) - length, NULL);
@@ -793,7 +802,12 @@ int main(int argc, char **argv)
                 } else
                     bind_n++;
 
-                 break;
+                break;
+            case 'X':
+                //Set new IPs for the clients when testing RSS
+                change_ip_client = 1;
+                break;
+                
             case '2':
                 if (str_to_mac(optarg, &client_addr) != 0)
                 {

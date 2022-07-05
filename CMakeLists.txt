@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 2.8.11)
 cmake_policy(SET CMP0003 NEW)
 project(picoquic C CXX)
 find_package (Threads REQUIRED)
-
 option(ENABLE_ASAN "Enable AddressSanitizer (ASAN) for debugging" OFF)
 option(ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer (UBSan) for debugging" OFF)
 
@@ -11,9 +10,9 @@ set(CMAKE_C_STANDARD 11)
 message(STATUS "Initial CMAKE_C_FLAGS=${CMAKE_C_FLAGS}")
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    set(CMAKE_C_FLAGS "-std=gnu99 -g -Wall -O3 -fno-exceptions -fno-signed-zeros -fno-trapping-math -march=native -msse4 -I/usr/local/include ${CC_WARNING_FLAGS} ${CMAKE_C_FLAGS}")
+    set(CMAKE_C_FLAGS "-std=gnu99 -ggdb -g -Wall -O3 -fno-exceptions -fno-signed-zeros -fno-trapping-math -march=native -msse4 -I/usr/local/include ${CC_WARNING_FLAGS} ${CMAKE_C_FLAGS}")
 else()
-    set(CMAKE_C_FLAGS "-std=gnu99 -g -Wall -O3 -fno-exceptions -fno-signed-zeros -frename-registers -fno-trapping-math -march=native -msse4 -I/usr/local/include ${CC_WARNING_FLAGS} ${CMAKE_C_FLAGS}")
+    set(CMAKE_C_FLAGS "-std=gnu99 -ggdb -g -Wall -O3 -fno-exceptions -fno-signed-zeros -frename-registers -fno-trapping-math -march=native -msse4 -I/usr/local/include ${CC_WARNING_FLAGS} ${CMAKE_C_FLAGS}")
 endif()
 
 if(DISABLE_DEBUG_PRINTF)
@@ -302,6 +301,20 @@ target_link_libraries(udpreceiver
     ${CMAKE_THREAD_LIBS_INIT}
     PkgConfig::LIBDPDK
 )
+
+add_executable(simple_proxy
+    dpdk_proxy/simple_proxy.c
+)
+
+target_link_libraries(simple_proxy
+    picoquic-core
+    ${PTLS_LIBRARIES}
+    ${OPENSSL_LIBRARIES}
+    ${CMAKE_DL_LIBS}
+    ${CMAKE_THREAD_LIBS_INIT}
+    PkgConfig::LIBDPDK
+)
+
 
 add_executable(picolog_t
     picolog/picolog.c

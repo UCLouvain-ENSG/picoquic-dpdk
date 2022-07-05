@@ -1,0 +1,5 @@
+Received 20000000025 bytes in 11.134076 seconds, 14370.298909 Mbps.
+Received 20000000025 bytes in 11.429075 seconds, 13999.383170 Mbps.
+Received 20000000025 bytes in 11.190305 seconds, 14298.091089 Mbps.
+Received 20000000025 bytes in 11.031505 seconds, 14503.914035 Mbps.
+Received 20000000025 bytes in 54.416437 seconds, 2940.288064 Mbps.
