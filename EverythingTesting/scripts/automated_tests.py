@@ -6,10 +6,11 @@ import json
 import shlex
 import time
 
-def retrieve_cards():
+def retrieve_cards(number):
     cards = open('cards.txt', 'r')
     lines = cards.readlines()
     counter = 0
+    nic_counter = 0
     ret = ''
     for line in lines:
         if(counter < 4):
@@ -18,6 +19,9 @@ def retrieve_cards():
             line_as_array = line.split()
             card_id = line_as_array[0]
             ret += '-a 0000:{} '.format(card_id)
+            nic_counter += 1
+            if nic_counter == number:
+                return ret
     return ret
 
 #Global variables
@@ -25,7 +29,8 @@ serverName = 'server'
 clientName = 'client1'
 process_name = 'dpdk_picoquicdemo'
 dpdk1Client = '--dpdk -l 0-1 -a 0000:8a:00.1 -- -A 50:6b:4b:f3:7c:71'
-dpdk15Client = '--dpdk -l 0-15 {} -- -A 50:6b:4b:f3:7c:71'.format(retrieve_cards())
+dpdk15Client = '--dpdk -l 0-15 {} -- -A 50:6b:4b:f3:7c:71'.format(retrieve_cards(15))
+dpdk8Client = '--dpdk -l 0-8 {} -- -A 50:6b:4b:f3:7c:71'.format(retrieve_cards(8))
 dpdk1Server = '--dpdk -l 0-1 -a 0000:51:00.1 --'
 dpdkVarServer = '--dpdk -l 0-{} -a 0000:51:00.1 --'
 nodpdk = 'nodpdk'
@@ -114,7 +119,7 @@ def test_generic_repeting_client(argsClient,argsServer,isComparison,repetition):
     
 def test_server_scaling():
     
-    clientArgs = {"eal" : dpdk16Client,
+    clientArgs = {"eal" : dpdk15Client,
                   "args": "-D ",
                   "output_file":"server_scaling_dpdk.txt",
                   "ip_and_port" : "10.100.0.2 5600",
@@ -146,6 +151,20 @@ def test_throughput():
         test_generic(clientArgsDpdk,serverArgsDpdk,True)
         time.sleep(5)
         
+def test_throughput_without_encryption():
+    ##Throughput test
+    clientArgsDpdk = {"eal" : dpdk1Client,
+                "args": "-D",
+                "output_file":"throughputBBR_noEncryption_dpdk.txt",
+                "ip_and_port" : "10.100.0.2 4443",
+                "request" : "/40000000000",
+                "keyword" : "Mbps"}
+    
+    serverArgsDpdk = {"eal" : dpdk1Server,
+                "args" : "",
+                "port" : "-p 4443"}
+    test_generic_repeting_client(clientArgsDpdk,serverArgsDpdk,True,15)
+        
         
     
 def test_handshake_simple():
@@ -168,7 +187,37 @@ def test_RSS_15():
                     "args": "-D",
                     "output_file":"TP_{}core_dpdk.txt".format(str(server_core)),
                     "ip_and_port" : "10.100.0.2 4443",
-                    "request" : "/10000000000",
+                    "request" : "/20000000000",
+                    "keyword" : "Mbps"}
+        
+        serverArgsDpdk = {"eal" : dpdkVarServer.format(str(server_core)),
+                    "args" : "",
+                    "port" : "-p 4443"}
+        test_generic_repeting_client(clientArgsDpdk,serverArgsDpdk,False,8)
+        time.sleep(10)
+        
+def test_RSS_8():
+    for server_core in [8]: 
+        clientArgsDpdk = {"eal" : dpdk8Client,
+                    "args": "-D",
+                    "output_file":"TP_{}core_dpdk_8_client.txt".format(str(server_core)),
+                    "ip_and_port" : "10.100.0.2 4443",
+                    "request" : "/20000000000",
+                    "keyword" : "Mbps"}
+        
+        serverArgsDpdk = {"eal" : dpdkVarServer.format(str(server_core)),
+                    "args" : "",
+                    "port" : "-p 4443"}
+        test_generic_repeting_client(clientArgsDpdk,serverArgsDpdk,False,8)
+        time.sleep(10)
+        
+def test_RSS_8_X():
+    for server_core in [8]: 
+        clientArgsDpdk = {"eal" : dpdk8Client,
+                    "args": "-D -X",
+                    "output_file":"TP_{}core_dpdk_8_client_X.txt".format(str(server_core)),
+                    "ip_and_port" : "10.100.0.2 4443",
+                    "request" : "/20000000000",
                     "keyword" : "Mbps"}
         
         serverArgsDpdk = {"eal" : dpdkVarServer.format(str(server_core)),
@@ -335,7 +384,10 @@ if __name__ == "__main__":
     #test_handshake_simple()
     #test_handshake()
     #test_request()
-    test_RSS_15()
+    #test_RSS_15()
+    #test_throughput_without_encryption()
+    test_RSS_8()
+    #test_RSS_8_X()
         
     
 

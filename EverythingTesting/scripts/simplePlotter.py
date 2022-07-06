@@ -63,6 +63,7 @@ def comparison_plot_bar(items,title,yLabel,outputFileName):
     plt.savefig(outputFileName)
     
 def comparison_plot_box(items,title,yLabel,outputFileName, xLabel = None):
+    print(xLabel)
     data = [i.getData() for i in items]
     labels = [i.label for i in items]
     fig, ax = plt.subplots()
@@ -71,9 +72,13 @@ def comparison_plot_box(items,title,yLabel,outputFileName, xLabel = None):
     ax.set_title(title)
     ax.set_ylabel(yLabel)
     if xLabel != None:
-        ax.set_xlabel = xLabel
+        ax.set_xlabel(xLabel)
     plt.grid(True)
-    plt.savefig(outputFileName)
+    plt.savefig(outputFileName,format = 'pdf', dpi=300)
+    plt.figure().clear()
+    plt.close()
+    plt.cla()
+    plt.clf()
 
     
 def throughput_comparison_plot_bar():
@@ -217,6 +222,45 @@ def batching_plot_with_128RX():
 
 ###BATCHING###
 
+
+##########$RSS#############
+
+def RSS_plot15():
+    items = []
+    for core in range(1,16):
+        item = ItemToPlot("{}".format(str(core)),get_full_data,("../data/TP_{}core_dpdk.txt".format(str(core)),throughput_index))
+        items.append(item)
+    comparison_plot_box(items, " " ,"Throughput (Mbps)","../plots/RSS.pdf","# of cores")
+
+def RSS_plot8():
+    items = []
+    for core in range(1,9):
+        item = ItemToPlot("{}".format(str(core)),get_full_data,("../data/TP_{}core_dpdk_8_client.txt".format(str(core)),throughput_index))
+        items.append(item)
+    comparison_plot_box(items, " " ,"Throughput (Mbps)","../plots/RSS8.pdf","# of cores")
+    
+def RSS_plot8X():
+    items = []
+    for core in range(1,9):
+        item = ItemToPlot("{}".format(str(core)),get_full_data,("../data/TP_{}core_dpdk_8_client_X.txt".format(str(core)),throughput_index))
+        items.append(item)
+    comparison_plot_box(items, " " ,"Throughput (Mbps)","../plots/RSS8X.pdf","# of cores")
+
+##########$RSS#############
+
+##########$ENCRYPTION######
+def encryption_plot():
+    items = []
+    
+    items.append(ItemToPlot("{}".format("pquic-enc"),get_full_data,("../data/throughputBBR_nodpdk.txt",throughput_index)))
+    items.append(ItemToPlot("{}".format("pquic-dpdk-enc"),get_full_data,("../data/throughputBBR_dpdk.txt",throughput_index)))
+    items.append(ItemToPlot("{}".format("pquic-noenc"),get_full_data,("../data/throughputBBR_noEncryption_nodpdk.txt",throughput_index)))
+    items.append(ItemToPlot("{}".format("pquic-dpdk-noenc"),get_full_data,("../data/throughputBBR_noEncryption_dpdk.txt",throughput_index)))
+    comparison_plot_box(items, " " ,"Throughput (Mbps)","../plots/encryption.pdf")
+##########$ENCRYPTION######
+
+
+
 if __name__ == "__main__":
     #handshake_comparison_plot()
     #throughput_comparison_plot_box()
@@ -233,8 +277,11 @@ if __name__ == "__main__":
     #batching_plot_CCalgo()
     #batching_plot_without_rereceive()
     #batching_plot_with_128RX()
-    handshake_time_comparison_plot_box()
+    #handshake_time_comparison_plot_box()
     #handshake_time_comparison_plot_box_clean()
-    
+    #RSS_plot()
+    RSS_plot8()
+    RSS_plot8X()
+    #encryption_plot()
    
 
