@@ -53,6 +53,8 @@
 #include <rte_devargs.h>
 #include <rte_version.h>
 
+#include "token_bucket.h"
+
 #define MAX_PKT_BURST 32
 #define MEMPOOL_CACHE_SIZE 256
 #define RTE_TEST_RX_DESC_DEFAULT 1024
@@ -70,6 +72,7 @@ static uint16_t nb_rxd = RTE_TEST_RX_DESC_DEFAULT;
 static uint16_t nb_txd = RTE_TEST_TX_DESC_DEFAULT;
 static struct rte_ether_addr eth_addr;
 static struct rte_ether_addr eth_addr_peer;
+struct token_bucket tb;
 
 static struct rte_eth_conf port_conf = {
     .rxmode = {
@@ -331,6 +334,7 @@ lcore_hello(__rte_unused void *arg)
         // printf("length : %d\n",htons(ip_hdr.total_length));
         m->data_len = offset;
         m->pkt_len = offset;
+        wait_until_token_available(&tb, actual_size*8);
         int sent = rte_eth_tx_buffer(0, 0, tx_buffer,m);
     }
 }
@@ -351,6 +355,13 @@ int main(int argc, char **argv)
 
 
     str_to_mac(argv[1],&eth_addr_peer);
+    printf("==================argc : %d\n",argc);
+    int packet_size = atoi(argv[2]);
+    uint64_t rate = atoi(argv[3]);
+    u_int64_t b_rate = rate*(1000);
+    init_token_bucket(&tb, b_rate, 3*b_rate);
+
+
     /* call lcore_hello() on every worker lcore */
     // RTE_LCORE_FOREACH_WORKER(lcore_id)
     // {

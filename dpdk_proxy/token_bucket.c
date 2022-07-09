@@ -9,13 +9,13 @@ long long get_time_in_ms(){
     return curr_time_in_ms;
 }
 
-void * init_token_bucket(struct token_bucket *tb, unsigned int rate, unsigned int burst){
+void *init_token_bucket(struct token_bucket *tb, uint64_t rate, uint64_t burst){
     tb->rate = rate;
     tb->burst = burst;
     tb->size = burst;
     tb->last_refilled_time = get_time_in_ms();
 }
-int *get_token(struct token_bucket *tb, unsigned int amount){
+int *get_token(struct token_bucket *tb, uint64_t amount){
 
     if (tb->size < amount){
         long long curr_time = get_time_in_ms();
@@ -30,4 +30,11 @@ int *get_token(struct token_bucket *tb, unsigned int amount){
     }
     tb->size -= amount;
     return 1;
+}
+
+int wait_until_token_available(struct token_bucket *tb, unsigned amount){
+
+    //busy wait
+    while(!get_token(tb,amount));
+    return 0;
 }
