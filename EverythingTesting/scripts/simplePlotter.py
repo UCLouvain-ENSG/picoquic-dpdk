@@ -257,7 +257,37 @@ def encryption_plot():
     items.append(ItemToPlot("{}".format("pquic-noenc"),get_full_data,("../data/throughputBBR_noEncryption_nodpdk.txt",throughput_index)))
     items.append(ItemToPlot("{}".format("pquic-dpdk-noenc"),get_full_data,("../data/throughputBBR_noEncryption_dpdk.txt",throughput_index)))
     comparison_plot_box(items, " " ,"Throughput (Mbps)","../plots/encryption.pdf")
+    
+    
+def encryption_plot_DPDK():
+    items = []
+    items.append(ItemToPlot("{}".format("CHACHA"),get_full_data,("../data/throughputBBR20_dpdk.txt",throughput_index)))
+    items.append(ItemToPlot("{}".format("AES128"),get_full_data,("../data/throughputBBR128_dpdk.txt",throughput_index)))
+    items.append(ItemToPlot("{}".format("AES256"),get_full_data,("../data/throughputBBR256_dpdk.txt",throughput_index)))
+
+    comparison_plot_box(items, " " ,"Throughput (Mbps)","../plots/encryptionDPDKcmp.pdf")
+    
+def encryption_plot_NODPDK():
+    items = []
+    items.append(ItemToPlot("{}".format("CHACHA"),get_full_data,("../data/throughputBBR20_nodpdk.txt",throughput_index)))
+    items.append(ItemToPlot("{}".format("AES128"),get_full_data,("../data/throughputBBR128_nodpdk.txt",throughput_index)))
+    items.append(ItemToPlot("{}".format("AES256"),get_full_data,("../data/throughputBBR256_nodpdk.txt",throughput_index)))
+
+    comparison_plot_box(items, " " ,"Throughput (Mbps)","../plots/encryptionNODPDKcmp.pdf")
+    
+    
 ##########$ENCRYPTION######
+
+
+#######PROXY######
+
+def TCP_PROXY():
+    items = []
+    items.append(ItemToPlot("{}".format("picoquic-dpdk-proxy"),get_full_data_perf,("../data/proxy/proxyTCP1200.txt",perf_tp_index)))
+    items.append(ItemToPlot("{}".format("l2-forwarder"),get_full_data_perf,("../data/proxy/noproxyTCP1200.txt",perf_tp_index)))
+    comparison_plot_box(items, " " ,"Throughput (Mbps)","../plots/TCP1200cmp.pdf")
+
+#######PROXY######
 
 
 
@@ -280,8 +310,11 @@ if __name__ == "__main__":
     #handshake_time_comparison_plot_box()
     #handshake_time_comparison_plot_box_clean()
     #RSS_plot()
-    RSS_plot8()
-    RSS_plot8X()
+    #RSS_plot8()
+    #RSS_plot8X()
     #encryption_plot()
-   
+    
+    #encryption_plot_DPDK()
+    #encryption_plot_NODPDK()
+    TCP_PROXY()
 

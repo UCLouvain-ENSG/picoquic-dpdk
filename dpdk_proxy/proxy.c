@@ -109,29 +109,27 @@ int rcv_encapsulate_send(picoquic_cnx_t* cnx,proxy_ctx_t * ctx) {
                                                                     eth_addr.addr_bytes[5]);
         
     pkt_recv = rte_eth_rx_burst(ctx->portid, ctx->queueid, pkts_burst, MAX_PKT_BURST);
-    if(pkt_recv > 0){
-        for (int j = 0; j < pkt_recv; j++)
-		{
-            struct rte_ether_hdr *eth_hdr = rte_pktmbuf_mtod(pkts_burst[j], struct rte_ether_hdr *);
-            if (eth_hdr->ether_type == rte_cpu_to_be_16(RTE_ETHER_TYPE_IPV4)){
-                int ret = 0;
-                struct rte_ipv4_hdr *ip_hdr;
-                ip_hdr = (struct rte_ipv4_hdr *)(rte_pktmbuf_mtod(pkts_burst[j], char *) + sizeof(struct rte_ether_hdr));
+    
+    for (int j = 0; j < pkt_recv; j++)
+    {
+        struct rte_ether_hdr *eth_hdr = rte_pktmbuf_mtod(pkts_burst[j], struct rte_ether_hdr *);
+        if (eth_hdr->ether_type == rte_cpu_to_be_16(RTE_ETHER_TYPE_IPV4)){
+            int ret = 0;
+            struct rte_ipv4_hdr *ip_hdr;
+            ip_hdr = (struct rte_ipv4_hdr *)(rte_pktmbuf_mtod(pkts_burst[j], char *) + sizeof(struct rte_ether_hdr));
 
-                struct rte_udp_hdr *udp = (struct rte_udp_hdr *)((unsigned char *)ip_hdr +
-															 sizeof(struct rte_ipv4_hdr));
-                unsigned char *payload = (unsigned char *)(udp + 1);
-                length = htons(ip_hdr->total_length);
-                ret = picoquic_queue_datagram_frame(cnx, length, ip_hdr);
-                rte_pktmbuf_free(pkts_burst[j]);
-                if(length > 1300){
-                    printf("error\n");
-                }
-                //printf("payload : %s\n",payload);
-                
+            struct rte_udp_hdr *udp = (struct rte_udp_hdr *)((unsigned char *)ip_hdr +
+                                                            sizeof(struct rte_ipv4_hdr));
+            unsigned char *payload = (unsigned char *)(udp + 1);
+            length = htons(ip_hdr->total_length);
+            ret = picoquic_queue_datagram_frame(cnx, length, ip_hdr);
+            rte_pktmbuf_free(pkts_burst[j]);
+            if(length > 1300){
+                printf("error\n");
             }
-		}
-        
+            //printf("payload : %s\n",payload);
+            
+        }
     }
     return 0; 
 }

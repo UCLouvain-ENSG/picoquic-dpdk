@@ -134,7 +134,8 @@ def test_server_scaling():
         test_generic(clientArgs,serverArgs,False)
         time.sleep(10)
     
-    
+ 
+## TP TESTS ##   
 def test_throughput():
     ##Throughput test
     for it in range(15):
@@ -151,6 +152,53 @@ def test_throughput():
         test_generic(clientArgsDpdk,serverArgsDpdk,True)
         time.sleep(5)
         
+def test_throughput256():
+    ##Throughput test
+    
+    clientArgsDpdk = {"eal" : dpdk1Client,
+                "args": "-D",
+                "output_file":"throughputBBR256_dpdk.txt",
+                "ip_and_port" : "10.100.0.2 4443",
+                "request" : "/20000000000",
+                "keyword" : "Mbps"}
+    
+    serverArgsDpdk = {"eal" : dpdk1Server,
+                "args" : "",
+                "port" : "-p 4443"}
+    test_generic_repeting_client(clientArgsDpdk,serverArgsDpdk,True,15)
+    
+def test_throughput128():
+    ##Throughput test
+    
+    clientArgsDpdk = {"eal" : dpdk1Client,
+                "args": "-D",
+                "output_file":"throughputBBR128_dpdk.txt",
+                "ip_and_port" : "10.100.0.2 4443",
+                "request" : "/20000000000",
+                "keyword" : "Mbps"}
+    
+    serverArgsDpdk = {"eal" : dpdk1Server,
+                "args" : "",
+                "port" : "-p 4443"}
+    test_generic_repeting_client(clientArgsDpdk,serverArgsDpdk,True,15)
+    
+def test_throughput20():
+    ##Throughput test
+    
+    clientArgsDpdk = {"eal" : dpdk1Client,
+                "args": "-D",
+                "output_file":"throughputBBR20_dpdk.txt",
+                "ip_and_port" : "10.100.0.2 4443",
+                "request" : "/20000000000",
+                "keyword" : "Mbps"}
+    
+    serverArgsDpdk = {"eal" : dpdk1Server,
+                "args" : "",
+                "port" : "-p 4443"}
+    test_generic_repeting_client(clientArgsDpdk,serverArgsDpdk,True,15)
+    
+## TP TESTS ##  
+    
 def test_throughput_without_encryption():
     ##Throughput test
     clientArgsDpdk = {"eal" : dpdk1Client,
@@ -386,8 +434,12 @@ if __name__ == "__main__":
     #test_request()
     #test_RSS_15()
     #test_throughput_without_encryption()
-    test_RSS_8()
+    #test_RSS_8()
     #test_RSS_8_X()
+    #test_throughput256()
+    #test_throughput128()
+    test_throughput20()
+        
         
     
 

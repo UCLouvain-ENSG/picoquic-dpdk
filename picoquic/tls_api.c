@@ -78,6 +78,11 @@
 #define PICOQUIC_ESNI_NONCE_SIZE 16
 #endif
 
+#define CHACHA 0
+#define ALL 0
+#define AES128 1
+#define AES256 0
+
 
 typedef struct st_picoquic_tls_ctx_t {
     ptls_t* tls;
@@ -474,7 +479,7 @@ ptls_openssl_verify_certificate_t* picoquic_openssl_get_certificate_verifier(cha
             }
         }
 
-        ptls_openssl_init_verify_certificate(verifier, store);
+        ptls_openssl_init_verify_certificate(verifier, store, NULL);
 
         // If we created an instance of the store, release our reference after giving it to the verify_certificate callback.
         // The callback internally increased the reference counter by one.
@@ -1701,12 +1706,37 @@ int picoquic_master_tlscontext(picoquic_quic_t* quic,
     else {
         memset(ctx, 0, sizeof(ptls_context_t));
         picoquic_set_random_provider_in_ctx(ctx);
-        
-        ret = picoquic_set_key_exchange_in_ctx(ctx, 0); /* was: ctx->key_exchanges = picoquic_key_exchanges; */
+#if CHACHA == 1
+        ret = picoquic_set_key_exchange_in_ctx(ctx, 20); /* was: ctx->key_exchanges = picoquic_key_exchanges; */
+
+        if (ret == 0) {
+            ret = picoquic_set_cipher_suite_in_ctx(ctx, 20, quic->use_low_memory); /* was: ptls_openssl_cipher_suites; */
+        }
+#endif
+
+#if AES128 == 1
+    ret = picoquic_set_key_exchange_in_ctx(ctx, 128); /* was: ctx->key_exchanges = picoquic_key_exchanges; */
+
+        if (ret == 0) {
+            ret = picoquic_set_cipher_suite_in_ctx(ctx, 128, quic->use_low_memory); /* was: ptls_openssl_cipher_suites; */
+        }
+#endif
+
+#if AES256 == 1
+    ret = picoquic_set_key_exchange_in_ctx(ctx, 256); /* was: ctx->key_exchanges = picoquic_key_exchanges; */
+
+        if (ret == 0) {
+            ret = picoquic_set_cipher_suite_in_ctx(ctx, 256, quic->use_low_memory); /* was: ptls_openssl_cipher_suites; */
+        }
+#endif
+
+#if ALL == 1
+    ret = picoquic_set_key_exchange_in_ctx(ctx, 0); /* was: ctx->key_exchanges = picoquic_key_exchanges; */
 
         if (ret == 0) {
             ret = picoquic_set_cipher_suite_in_ctx(ctx, 0, quic->use_low_memory); /* was: ptls_openssl_cipher_suites; */
         }
+#endif 
 
         if (ret == 0) {
             ctx->send_change_cipher_spec = 0;

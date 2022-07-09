@@ -497,6 +497,7 @@ int picoquic_packet_loop_dpdk(picoquic_quic_t *quic,
 
     ret = rte_eth_tx_buffer_init(tx_buffer, MAX_PKT_BURST_TX);
     if (ret != 0) {
+        printf("Thats a fail\n");
         return ret;
     }
     rte_eth_tx_buffer_set_err_callback(tx_buffer, drop_callback, 0);

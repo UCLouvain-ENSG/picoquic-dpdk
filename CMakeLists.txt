@@ -276,6 +276,7 @@ target_include_directories(dpdk_picoquicdemo PRIVATE loglib dpdk_proxy)
 
 add_executable(udpsender
     dpdk_proxy/udpsender.c
+    dpdk_proxy/token_bucket.c
 )
 
 target_link_libraries(udpsender
