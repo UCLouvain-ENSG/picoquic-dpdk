@@ -3958,23 +3958,20 @@ int picoquic_prepare_packet_ready(picoquic_cnx_t* cnx, picoquic_path_t* path_x, 
                         }
 
                         /* Start of CC controlled frames */
-                        if (ret == 0) {
-                            uint8_t* bytes0 = bytes_next;
+                        if (ret == 0 && length <= header_length && cnx->first_datagram != NULL) {
+                            bytes_next = picoquic_format_first_datagram_frame(cnx, bytes_next, bytes_max, &more_data, &is_pure_ack);
+                        }
 
-                            if (cnx->first_datagram != NULL) {
-                                bytes_next = picoquic_format_first_datagram_frame(cnx, bytes_next, bytes_max, &more_data, &is_pure_ack);
-                            }
-                            else {
-                                while (cnx->is_datagram_ready) {
-                                    uint8_t * dg_start = bytes_next;
-                                    bytes_next = picoquic_format_ready_datagram_frame(cnx, bytes_next, bytes_max,
-                                        &more_data, &is_pure_ack, &ret);
-                                    if (bytes_next == NULL || bytes_next == dg_start) {
-                                        break;
-                                    }
+                        if (ret == 0){
+                            while (cnx->is_datagram_ready) {
+                                //printf("here\n");
+                                uint8_t* dg_start = bytes_next;
+                                bytes_next = picoquic_format_ready_datagram_frame(cnx, bytes_next, bytes_max,
+                                    &more_data, &is_pure_ack, &ret);
+                                if (bytes_next == NULL || bytes_next == dg_start) {
+                                    break;
                                 }
                             }
-                            datagram_tried_and_failed = (bytes_next == bytes0);
                         }
 
                         /* If present, send stream frames queued for retransmission */

@@ -79,6 +79,20 @@ def comparison_plot_box(items,title,yLabel,outputFileName, xLabel = None):
     plt.close()
     plt.cla()
     plt.clf()
+    
+def comparison_plot_bar_proxy():
+    data = [800,1800,2400,5000,7000]
+    labels = [100,300,500,700,1000]
+    
+    plt.ylabel("Throughput (Mbps)")
+    plt.xlabel("UDP payload size (bytes)")
+    plt.bar(labels,data,width=50)
+    plt.grid(True)
+    plt.savefig("../plots/dgSizeProxycmp.pdf",format = 'pdf', dpi=300)
+    plt.figure().clear()
+    plt.close()
+    plt.cla()
+    plt.clf()
 
     
 def throughput_comparison_plot_bar():
@@ -170,10 +184,10 @@ def noproxy_pkt_size_plot():
 
 def batching32_plot():
     items = []
-    for batching in [1,2,4,8,16,32,64]:
-        item = ItemToPlot("{}".format(str(batching)),get_full_data,("../data/throughput32_{}_dpdk.txt".format(str(batching)),throughput_index))
+    for batching in [1,2,3,4,8,16,32]:
+        item = ItemToPlot("{}".format(str(batching)),get_full_data,("../data/throughput_{}_fixed_20GB_RX32_dpdk.txt".format(str(batching)),throughput_index))
         items.append(item)
-    comparison_plot_box(items, "Batching size impact on throughput","Throughput (Mbps)","../plots/batching_impact_withCCFixedRX.png")
+    comparison_plot_box(items, "","Throughput (Mbps)","../plots/batching_impact_FixedRX.pdf","rx_batching")
     
 def batching_no_CC_plot():
     items = []
@@ -316,5 +330,7 @@ if __name__ == "__main__":
     
     #encryption_plot_DPDK()
     #encryption_plot_NODPDK()
-    TCP_PROXY()
+    #TCP_PROXY()
+    #comparison_plot_bar_proxy()
+    batching32_plot()
 

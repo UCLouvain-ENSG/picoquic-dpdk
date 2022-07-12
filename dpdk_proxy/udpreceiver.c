@@ -125,9 +125,11 @@ lcore_hello(__rte_unused void *arg)
 
     printf("mac : %s\n",macStr);
 	int packet_counter = 0;
+	uint64_t global_packet_counter = 0;
 	uint64_t goodput = 0;
 	struct timeval start_time;
     struct timeval current_time;
+	int empty_cycle_counter = 0;
 	gettimeofday(&start_time, NULL);
 	while (true)
 	{
@@ -137,35 +139,50 @@ lcore_hello(__rte_unused void *arg)
 		uint16_t *proto;
 		struct rte_ipv4_hdr *ip_hdr;
 		for (int j = 0; j < ret; j++)
-		{
-			
+		{			
 			ip_hdr = (struct rte_ipv4_hdr *)(rte_pktmbuf_mtod(pkts_burst[j], char *) + sizeof(struct rte_ether_hdr));
-
 			struct rte_udp_hdr *udp_hdr = (struct rte_udp_hdr *)((unsigned char *)ip_hdr +
 															 sizeof(struct rte_ipv4_hdr));
 			unsigned char *payload = (unsigned char *)(udp_hdr + 1);
+			int msg;
+			memcpy(&msg,payload,4);
+			//printf("id : %d\n",msg);
 			rte_be16_t length = udp_hdr->dgram_len;
             uint64_t payload_length = htons(length) - sizeof(struct rte_udp_hdr);
 			goodput += payload_length;
 			packet_counter++;
-
-			// printf("payload : %s\n",payload);
+			// if(msg != global_packet_counter){
+			// 	printf("error at packet %d\n",global_packet_counter);
+			// 	printf("expected : %d\n",global_packet_counter);
+			// 	printf("actual : %d\n",msg);
+			// 	global_packet_counter = msg;
+			// }
+			global_packet_counter++;
 			rte_pktmbuf_free(pkts_burst[j]);
 			
-
 		}
 		gettimeofday(&current_time, NULL);
 		double elapsed = 0.0;
 		elapsed = (current_time.tv_sec - start_time.tv_sec) + (current_time.tv_usec - start_time.tv_usec) / 1000000.0;
-		if(elapsed > 2){
+		if(elapsed > 5){
+			if(packet_counter == 0){
+				empty_cycle_counter++;
+				if(empty_cycle_counter>=2){
+					break;
+				}
+			}
+			else{
+				empty_cycle_counter = 0;
+			}
 			printf("goodput : %lf\n", ((goodput*8)/1000000)/elapsed);
 			printf("number of packets : %lu\n",packet_counter);
 			goodput = 0;
 			packet_counter = 0;
 			gettimeofday(&start_time, NULL);
 		}
-		
+		//printf("number of pkts received : %lu\n",global_packet_counter);
 	}
+	printf("number of pkts received : %lu\n",global_packet_counter);
 	return 0;
 }
 

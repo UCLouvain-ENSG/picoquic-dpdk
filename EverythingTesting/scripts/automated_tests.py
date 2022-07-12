@@ -337,6 +337,36 @@ def test_batching_fixed_RX():
             time.sleep(5)
         time.sleep(10)
         
+        
+def test_batching_fixed_RX32():
+    for i in [1,2,3,4,8,16,32]:
+        clientArgsDpdk = {"eal" : dpdk1Client,
+                    "args": "-D -* {} -@ 32".format(str(i)),
+                    "output_file":"throughput_{}_fixed_20GB_RX32_dpdk.txt".format(str(i)),
+                    "ip_and_port" : "10.100.0.2 4443",
+                    "request" : "/20000000000",
+                    "keyword" : "Mbps"}
+        
+        serverArgsDpdk = {"eal" : dpdk1Server,
+                    "args" : "-* {} -@ 32".format(str(i)),
+                    "port" : "-p 4443"}
+        test_generic_repeting_client(clientArgsDpdk,serverArgsDpdk,False,15)
+        
+def test_batching_fixed_RX64():
+    for i in [1,2,3,4,8,16,32,64]:
+        clientArgsDpdk = {"eal" : dpdk1Client,
+                    "args": "-D -* {} -@ 64".format(str(i)),
+                    "output_file":"throughput_{}_fixed_20GB_RX64_dpdk.txt".format(str(i)),
+                    "ip_and_port" : "10.100.0.2 4443",
+                    "request" : "/20000000000",
+                    "keyword" : "Mbps"}
+        
+        serverArgsDpdk = {"eal" : dpdk1Server,
+                    "args" : "-* {} -@ 64".format(str(i)),
+                    "port" : "-p 4443"}
+        test_generic_repeting_client(clientArgsDpdk,serverArgsDpdk,False,15)
+        
+        
 def test_batching2():
     for i in [1,2,4,8,16,32,64]:
         for it in range(5):
@@ -438,7 +468,8 @@ if __name__ == "__main__":
     #test_RSS_8_X()
     #test_throughput256()
     #test_throughput128()
-    test_throughput20()
+    #test_throughput20()
+    test_batching_fixed_RX64()
         
         
     
