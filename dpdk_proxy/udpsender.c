@@ -75,6 +75,7 @@ static struct rte_ether_addr eth_addr_peer;
 struct token_bucket tb;
 int actual_size;
 int test_duration;
+uint64_t rate;
 
 static struct rte_eth_conf port_conf = {
     .rxmode = {
@@ -302,18 +303,27 @@ lcore_hello(__rte_unused void *arg)
     memset(udp_payload,48,1200);
     struct timeval start_time;
     struct timeval current_time;
+    double slow_start_delay = 15;
+    int slow_start_finished = 0;
+
 	gettimeofday(&start_time, NULL);
     uint64_t packet_counter = 0;
-    for(int i = 0; i<100000;i++)
-    //while (1)
+    // for(int i = 0; i<100000;i++)
+    while (1)
     {
         memcpy(udp_payload,&my_counter,4);
         my_counter++;
-        gettimeofday(&current_time, NULL);
+        gettimeofday(&current_time, NULL);        
         double elapsed = 0.0;
 		elapsed = (current_time.tv_sec - start_time.tv_sec) + (current_time.tv_usec - start_time.tv_usec) / 1000000.0;
         if(elapsed > test_duration){
             break;
+        }
+        else if(elapsed > slow_start_delay && !slow_start_finished){
+            configure_token_bucket(&tb, rate, ((u_int64_t ) 4) * rate);
+            slow_start_finished = 1;
+            printf("hello\n");
+
         }
         int offset = 0;
         m = rte_pktmbuf_alloc(mb_pool);
@@ -350,12 +360,12 @@ lcore_hello(__rte_unused void *arg)
         m->data_len = offset;
         m->pkt_len = offset;
         //printf("offset : %d\n",offset);
-        wait_until_token_available(&tb, actual_size*8);
+        wait_until_token_available(&tb, (uint64_t)actual_size*8);
         int sent = rte_eth_tx_burst(0, 0, &m,1);
         packet_counter += (uint64_t)sent;
-        if(packet_counter % 1000 == 0){
-            printf("packet_counter: %d\n",packet_counter);
-        }
+        // if(packet_counter % 1000 == 0){
+        //     printf("packet_counter: %d\n",packet_counter);
+        // }
     }
     printf("nb_packet_transmitted : %lu\n",packet_counter);
 
@@ -379,10 +389,10 @@ int main(int argc, char **argv)
     str_to_mac(argv[1],&eth_addr_peer);
     printf("==================argc : %d\n",argc);
     actual_size = atoi(argv[2]);
-    uint64_t rate = atoi(argv[3]);
+    rate = atoi(argv[3])*1000;
     test_duration = atoi(argv[4]);
-    u_int64_t b_rate = rate*(1000);
-    init_token_bucket(&tb, b_rate, ((u_int64_t ) 2) * b_rate);
+    u_int64_t slow_start_rate = 1000*1000;
+    init_token_bucket(&tb, slow_start_rate, ((u_int64_t ) 4) * slow_start_rate);
 
 
     /* call lcore_hello() on every worker lcore */

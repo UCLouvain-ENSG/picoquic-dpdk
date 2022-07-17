@@ -139,26 +139,32 @@ lcore_hello(__rte_unused void *arg)
 		uint16_t *proto;
 		struct rte_ipv4_hdr *ip_hdr;
 		for (int j = 0; j < ret; j++)
-		{			
-			ip_hdr = (struct rte_ipv4_hdr *)(rte_pktmbuf_mtod(pkts_burst[j], char *) + sizeof(struct rte_ether_hdr));
-			struct rte_udp_hdr *udp_hdr = (struct rte_udp_hdr *)((unsigned char *)ip_hdr +
-															 sizeof(struct rte_ipv4_hdr));
-			unsigned char *payload = (unsigned char *)(udp_hdr + 1);
-			int msg;
-			memcpy(&msg,payload,4);
-			//printf("id : %d\n",msg);
-			rte_be16_t length = udp_hdr->dgram_len;
-            uint64_t payload_length = htons(length) - sizeof(struct rte_udp_hdr);
-			goodput += payload_length;
-			packet_counter++;
-			// if(msg != global_packet_counter){
-			// 	printf("error at packet %d\n",global_packet_counter);
-			// 	printf("expected : %d\n",global_packet_counter);
-			// 	printf("actual : %d\n",msg);
-			// 	global_packet_counter = msg;
-			// }
-			global_packet_counter++;
+		{	
+			struct rte_ether_hdr *eth_hdr = rte_pktmbuf_mtod(pkts_burst[j], struct rte_ether_hdr *);
+			if (eth_hdr->ether_type == rte_cpu_to_be_16(RTE_ETHER_TYPE_IPV4))
+            {
+				ip_hdr = (struct rte_ipv4_hdr *)(rte_pktmbuf_mtod(pkts_burst[j], char *) + sizeof(struct rte_ether_hdr));
+				struct rte_udp_hdr *udp_hdr = (struct rte_udp_hdr *)((unsigned char *)ip_hdr +
+																sizeof(struct rte_ipv4_hdr));
+				unsigned char *payload = (unsigned char *)(udp_hdr + 1);
+				int msg;
+				memcpy(&msg,payload,4);
+				//printf("id : %d\n",msg);
+				rte_be16_t length = udp_hdr->dgram_len;
+				uint64_t payload_length = htons(length) - sizeof(struct rte_udp_hdr);
+				goodput += payload_length;
+				packet_counter++;
+				if(msg != global_packet_counter){
+					// printf("loss detected at packet %d\n",global_packet_counter);
+					// printf("expected : %d\n",global_packet_counter);
+					// printf("actual : %d\n",msg);
+					printf("packet lost\n");
+					global_packet_counter = msg;
+				}
+				global_packet_counter++;
+			}
 			rte_pktmbuf_free(pkts_burst[j]);
+
 			
 		}
 		gettimeofday(&current_time, NULL);
@@ -167,9 +173,9 @@ lcore_hello(__rte_unused void *arg)
 		if(elapsed > 5){
 			if(packet_counter == 0){
 				empty_cycle_counter++;
-				if(empty_cycle_counter>=2){
-					break;
-				}
+				// if(empty_cycle_counter>=2){
+				// 	break;
+				// }
 			}
 			else{
 				empty_cycle_counter = 0;

@@ -15,6 +15,14 @@ void *init_token_bucket(struct token_bucket *tb, uint64_t rate, uint64_t burst){
     tb->size = burst;
     tb->last_refilled_time = get_time_in_ms();
 }
+
+void *configure_token_bucket(struct token_bucket *tb, uint64_t rate, uint64_t burst){
+    tb->rate = rate;
+    tb->burst = burst;
+    tb->size = burst;
+    tb->last_refilled_time = get_time_in_ms();
+}
+
 int *get_token(struct token_bucket *tb, uint64_t amount){
 
     if (tb->size < amount){
@@ -32,7 +40,7 @@ int *get_token(struct token_bucket *tb, uint64_t amount){
     return 1;
 }
 
-int wait_until_token_available(struct token_bucket *tb, unsigned amount){
+int wait_until_token_available(struct token_bucket *tb, uint64_t amount){
 
     //busy wait
     while(!get_token(tb,amount));
