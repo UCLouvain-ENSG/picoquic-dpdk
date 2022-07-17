@@ -159,6 +159,7 @@ lcore_hello(__rte_unused void *arg)
 					// printf("expected : %d\n",global_packet_counter);
 					// printf("actual : %d\n",msg);
 					printf("packet lost\n");
+					return;
 					global_packet_counter = msg;
 				}
 				global_packet_counter++;
@@ -170,12 +171,12 @@ lcore_hello(__rte_unused void *arg)
 		gettimeofday(&current_time, NULL);
 		double elapsed = 0.0;
 		elapsed = (current_time.tv_sec - start_time.tv_sec) + (current_time.tv_usec - start_time.tv_usec) / 1000000.0;
-		if(elapsed > 5){
+		if(elapsed > 2){
 			if(packet_counter == 0){
 				empty_cycle_counter++;
-				// if(empty_cycle_counter>=2){
-				// 	break;
-				// }
+				if(empty_cycle_counter>=6){
+					break;
+				}
 			}
 			else{
 				empty_cycle_counter = 0;

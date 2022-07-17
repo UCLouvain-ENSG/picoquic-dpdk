@@ -305,24 +305,40 @@ lcore_hello(__rte_unused void *arg)
     struct timeval current_time;
     double slow_start_delay = 15;
     int slow_start_finished = 0;
+    struct timeval timer_increasing_tp_start;
+    struct timeval timer_increasing_tp_finish;
+    int fast_increasing = 0;
 
 	gettimeofday(&start_time, NULL);
     uint64_t packet_counter = 0;
     // for(int i = 0; i<100000;i++)
     while (1)
     {
+        if(fast_increasing){
+            gettimeofday(&timer_increasing_tp_finish, NULL);
+            double elapsed_increasing =  (timer_increasing_tp_finish.tv_sec - timer_increasing_tp_start.tv_sec) + 
+                                        (timer_increasing_tp_finish.tv_usec - timer_increasing_tp_start.tv_usec) / 1000000.0;
+            if(elapsed_increasing > 2){
+                gettimeofday(&timer_increasing_tp_start, NULL);
+                rate = rate + rate*0.05;
+                configure_token_bucket(&tb, rate, ((u_int64_t ) 4) * rate);
+            }
+        }
         memcpy(udp_payload,&my_counter,4);
         my_counter++;
+
         gettimeofday(&current_time, NULL);        
         double elapsed = 0.0;
 		elapsed = (current_time.tv_sec - start_time.tv_sec) + (current_time.tv_usec - start_time.tv_usec) / 1000000.0;
         if(elapsed > test_duration){
-            break;
+            
         }
         else if(elapsed > slow_start_delay && !slow_start_finished){
             configure_token_bucket(&tb, rate, ((u_int64_t ) 4) * rate);
             slow_start_finished = 1;
-            printf("hello\n");
+            fast_increasing = 1;
+            gettimeofday(&timer_increasing_tp_start, NULL);
+            printf("slow start finished\n");
 
         }
         int offset = 0;
@@ -391,7 +407,7 @@ int main(int argc, char **argv)
     actual_size = atoi(argv[2]);
     rate = atoi(argv[3])*1000;
     test_duration = atoi(argv[4]);
-    u_int64_t slow_start_rate = 1000*1000;
+    u_int64_t slow_start_rate = 100*1000;
     init_token_bucket(&tb, slow_start_rate, ((u_int64_t ) 4) * slow_start_rate);
 
 
