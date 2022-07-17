@@ -127,6 +127,10 @@ static const char *default_server_name = "::";
 #define PICOQUIC_SAMPLE_CLIENT_QLOG_DIR ".";
 #define PICOQUIC_SAMPLE_SERVER_QLOG_DIR ".";
 
+//proxy
+
+#define RING_SIZE 8191
+
 struct rte_mempool *mb_pools[MAX_NB_OF_PORTS_AND_LCORES];
 struct rte_eth_dev_tx_buffer *tx_buffers[MAX_NB_OF_PORTS_AND_LCORES];
 struct rte_eth_rxconf rxq_conf;
@@ -161,6 +165,13 @@ int MAX_PKT_BURST_TX = 32;
 int dpdk = 0;
 int handshake_test = 0;
 int request_test = 0;
+
+int non_dpdk_proxy = 0;
+
+
+// structures used for the proxy
+rte_ring *rx_to_worker_ring;
+
 
 void print_address(FILE *F_log, struct sockaddr *address, char *label, picoquic_connection_id_t cnx_id)
 {
@@ -486,6 +497,21 @@ int dpdk_init_port_server(uint16_t nb_of_queues)
     }
 }
 
+
+static int
+proxy_job(void *arg){
+    struct rte_mbuf *pkts_burst[MAX_PKT_BURST_RX];
+    unsigned portid = 0;
+    unsigned queueid = 0;
+    unsigned MAX_PKT_BURST = 32;
+    while(true){
+        unsigned nb_rx = rte_eth_rx_burst(portid, queueid, pkts_burst, MAX_PKT_BURST);
+        u_int16_t nb_rx_enqueue = rte_ring_enqueue_burst(rx_to_worker_ring, (void *const *)pkts_burst, nb_rx, NULL);
+    }
+    
+}
+
+
 static int
 client_job(void *arg)
 {
@@ -523,10 +549,20 @@ client_job(void *arg)
         proxy_ctx_t proxy_ctx;
         proxy_ctx.portid = proxy_port;
         proxy_ctx.queueid = 0;
+        proxy_ctx.rx_to_worker_ring = rx_to_worker_ring;
+        
         proxy_ctx.mb_pool= mb_pools[main_port];
         proxy_ctx.client_addr = &client_addr;
 
-        quic_client(server_name,
+        if(non_dpdk_proxy){
+            quic_client(server_name, server_port, &config,
+                                          force_migration, nb_packets_before_update, client_scenario, handshake_test, request_test, 0, 
+                                          MAX_PKT_BURST_RX,
+                                          MAX_PKT_BURST_TX,  0, 0, NULL, NULL, NULL, NULL,&proxy_ctx);
+
+        }
+        else{
+            quic_client(server_name,
                     server_port,
                     &config,
                     force_migration,
@@ -536,6 +572,7 @@ client_job(void *arg)
                     MAX_PKT_BURST_RX,
                     MAX_PKT_BURST_TX,  
                     main_port, queueid, &addr_from, &eth_addr, mb_pools[main_port], tx_buffers[main_port],&proxy_ctx);
+        }
     }
     else
     {
@@ -604,14 +641,24 @@ server_job(void *arg)
         proxy_ctx.queueid = 0;
         proxy_ctx.mb_pool= mb_pools[main_port];
         proxy_ctx.client_addr = &client_addr;
+        proxy_ctx.rx_to_worker_ring = rx_to_worker_ring;
 
-        quic_server(server_name,
+        if(non_dpdk_proxy){
+            quic_server(server_name, &config,
+                demo_config,
+                just_once, 0, MAX_PKT_BURST_RX,MAX_PKT_BURST_TX, 0,
+                NULL, NULL, NULL, NULL, &proxy_ctx);
+        }
+        else{
+            quic_server(server_name,
                 &config,
                 demo_config,
                 just_once,
                 dpdk,
                 MAX_PKT_BURST_RX,
                 MAX_PKT_BURST_TX,  portid, &addr_from, NULL, mb_pools[main_port], tx_buffers[demo_config->queueid],&proxy_ctx);
+        }
+        
     
 
     }
@@ -750,7 +797,7 @@ int main(int argc, char **argv)
     (void)WSA_START(MAKEWORD(2, 2), &wsaData);
 #endif
     picoquic_config_init(&config);
-    char params[] = "u:f:A:N:@:*:2:d:3H1rX";
+    char params[] = "u:f:A:N:@:*:2:d:3H1rX!";
     int length = strlen(params);
     memcpy(option_string, params, length);
     ret = picoquic_config_option_letters(option_string + length, sizeof(option_string) - length, NULL);
@@ -776,6 +823,10 @@ int main(int argc, char **argv)
                     fprintf(stderr, "Invalid migration mode: %s\n", optarg);
                     usage();
                 }
+                break;
+            
+            case '!':
+                non_dpdk_proxy = 1;
                 break;
             case 'r':
                 flow = 1;
@@ -881,6 +932,11 @@ int main(int argc, char **argv)
     if (bind_n == 0)
         bind_n = 1;
 
+
+    if(is_proxy){
+        rte_ring_create("rx_to_worker", rte_align32pow2(RING_SIZE), rte_socket_id(), RING_F_SP_ENQ | RING_F_SC_DEQ);
+    }
+
     if (is_client == 0)
     {
         if(dpdk){
@@ -943,9 +999,14 @@ int main(int argc, char **argv)
             }
             
             unsigned index_lcore = 0;
+            int has_client_been_started = 0;
+            int has_rx_been_start = 0;
             RTE_LCORE_FOREACH_WORKER(lcore_id)
             {
-                rte_eal_remote_launch(server_job, &demo_configs[lcore_id], lcore_id);
+                if(!has_client_been_started){
+                    rte_eal_remote_launch(server_job, &demo_configs[lcore_id], lcore_id);
+                }
+                else if
             }
         }
         else

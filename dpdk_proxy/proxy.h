@@ -26,10 +26,9 @@ typedef struct st_proxy_ctx_t {
     struct rte_mempool *mb_pool;
     struct rte_ether_addr *client_addr;
     struct sockaddr_in *client_ip;
+    struct rte_ring *rx_to_worker_ring;
     uint64_t counter;
 } proxy_ctx_t;
-
-// proxy_ctx_t* proxy_create_ctx(proxy_struct_t *proxy_struct)
 
 int proxy_callback(picoquic_cnx_t* cnx,
     uint64_t stream_id, uint8_t* bytes, size_t length,

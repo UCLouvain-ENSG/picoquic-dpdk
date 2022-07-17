@@ -189,6 +189,13 @@ def batching32_plot():
         items.append(item)
     comparison_plot_box(items, "","Throughput (Mbps)","../plots/batching_impact_FixedRX.pdf","rx_batching")
     
+def batching64_plot():
+    items = []
+    for batching in [1,2,3,4,8,16,32,64]:
+        item = ItemToPlot("{}".format(str(batching)),get_full_data,("../data/throughput_{}_fixed_20GB_RX64_dpdk.txt".format(str(batching)),throughput_index))
+        items.append(item)
+    comparison_plot_box(items, "","Throughput (Mbps)","../plots/batching_impact_FixedRX.pdf","tx_batching")
+    
 def batching_no_CC_plot():
     items = []
     for batching in [4,8,16,32,64,128]:
@@ -332,5 +339,5 @@ if __name__ == "__main__":
     #encryption_plot_NODPDK()
     #TCP_PROXY()
     #comparison_plot_bar_proxy()
-    batching32_plot()
+    batching64_plot()
 

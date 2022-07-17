@@ -172,10 +172,14 @@ int rcv_encapsulate_send(picoquic_cnx_t* cnx,proxy_ctx_t * ctx) {
                                                                     eth_addr.addr_bytes[4], 
                                                                     eth_addr.addr_bytes[5]);
         
-    pkt_recv = rte_eth_rx_burst(ctx->portid, ctx->queueid, pkts_burst, MAX_PKT_BURST);
+    int nb_rx = (int)rte_ring_dequeue_burst(ctx->rx_to_worker_ring, (void**)pkts_burst, MAX_PKT_BURST, NULL);
+    // printf("trying to receive\n");
     
+    // printf("mac : %s\n",macStr);
+
     for (int j = 0; j < pkt_recv; j++)
     {
+        //printf("received\n");
         struct rte_ether_hdr *eth_hdr = rte_pktmbuf_mtod(pkts_burst[j], struct rte_ether_hdr *);
         if (eth_hdr->ether_type == rte_cpu_to_be_16(RTE_ETHER_TYPE_IPV4)){
             int ret = 0;
