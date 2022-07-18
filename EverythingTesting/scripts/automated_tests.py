@@ -475,9 +475,9 @@ def proxy_general_testing():
             time.sleep(3)
             clientP2 = run_command("sh exec_scripts/clientProxy.sh >> /dev/null",clientName,working_directory)
             time.sleep(3)
-            serverP1 = run_command(nss + " iperf3 -s >> /dev/null",serverName,working_directory)
+            serverP2 = run_command(nss + " iperf3 -s >> /dev/null",serverName,working_directory)
             time.sleep(3)
-            serverP2 = run_command(nsc + " iperf3 -M 1200 -c 10.10.0.2 -t 30 >> EverythingTesting/data/proxy/proxyTCP{}.txt".format(str(size)),serverName,working_directory)
+            serverP1 = run_command(nsc + " iperf3 -M {} -c 10.10.0.2 -t 30 >> EverythingTesting/data/proxy/proxyTCP{}.txt".format(str(size),str(size)),serverName,working_directory)
             serverP1.wait()
             clean_everything();
             time.sleep(3);
@@ -488,9 +488,9 @@ def proxy_general_testing():
             time.sleep(3)
             clientP2 = run_command("sh exec_scripts/dpdk_relay1.sh >> /dev/null",clientName,working_directory)
             time.sleep(3)
-            serverP1 = run_command(nss + " iperf3 -s >> /dev/null",serverName,working_directory)
+            serverP2 = run_command(nss + " iperf3 -s >> /dev/null",serverName,working_directory)
             time.sleep(3)
-            serverP2 = run_command(nsc + " iperf3 -M 1200 -c 10.10.0.2 -t 30 >> EverythingTesting/data/proxy/noproxyTCP{}.txt".format(str(size)),serverName,working_directory)
+            serverP1 = run_command(nsc + " iperf3 -M {} -c 10.10.0.2 -t 30 >> EverythingTesting/data/proxy/noproxyTCP{}.txt".format(str(size),str(size)),serverName,working_directory)
             serverP1.wait()
             clean_everything();
             time.sleep(3);
