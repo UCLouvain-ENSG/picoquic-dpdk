@@ -129,7 +129,7 @@ static const char *default_server_name = "::";
 
 //proxy
 
-#define RING_SIZE 8191
+#define RING_SIZE 8192
 
 struct rte_mempool *mb_pools[MAX_NB_OF_PORTS_AND_LCORES];
 struct rte_eth_dev_tx_buffer *tx_buffers[MAX_NB_OF_PORTS_AND_LCORES];
@@ -143,6 +143,7 @@ uint16_t nb_txd = RTE_TEST_TX_DESC_DEFAULT;
 
 // 1 if in proxy mode
 int is_proxy = 0;
+int proxy_port_arg = 0;
 
 // proxy clients/server mac
 struct rte_ether_addr client_addr;
@@ -170,7 +171,7 @@ int non_dpdk_proxy = 0;
 
 
 // structures used for the proxy
-rte_ring *rx_to_worker_ring;
+struct rte_ring *rx_to_worker_ring;
 
 
 void print_address(FILE *F_log, struct sockaddr *address, char *label, picoquic_connection_id_t cnx_id)
@@ -499,16 +500,35 @@ int dpdk_init_port_server(uint16_t nb_of_queues)
 
 
 static int
-proxy_job(void *arg){
+proxy_rx_job(void *arg){
     struct rte_mbuf *pkts_burst[MAX_PKT_BURST_RX];
-    unsigned portid = 0;
+    int *is_running_flag;
+    int dummy = 1;
+    //server
+    if(proxy_port_arg == 1){
+        demo_config_t* demo_config = (demo_config_t*)arg;
+        is_running_flag = &demo_config->is_running; 
+    }
+    //client
+    else{
+        is_running_flag = &dummy;
+    }
+    unsigned portid = proxy_port_arg;
     unsigned queueid = 0;
     unsigned MAX_PKT_BURST = 32;
-    while(true){
+    while(*is_running_flag){
         unsigned nb_rx = rte_eth_rx_burst(portid, queueid, pkts_burst, MAX_PKT_BURST);
-        u_int16_t nb_rx_enqueue = rte_ring_enqueue_burst(rx_to_worker_ring, (void *const *)pkts_burst, nb_rx, NULL);
+        if(nb_rx != 0){
+            u_int16_t nb_rx_enqueue = rte_ring_enqueue_burst(rx_to_worker_ring, (void *const *)pkts_burst, nb_rx, NULL);
+            if(nb_rx != nb_rx_enqueue){
+                printf("buffer is FULL\n");
+                return -1;
+            }
+        }
+        
     }
-    
+    printf("proxy exited\n");
+    return 0;
 }
 
 
@@ -934,7 +954,7 @@ int main(int argc, char **argv)
 
 
     if(is_proxy){
-        rte_ring_create("rx_to_worker", rte_align32pow2(RING_SIZE), rte_socket_id(), RING_F_SP_ENQ | RING_F_SC_DEQ);
+        rx_to_worker_ring = rte_ring_create("rx_to_worker", rte_align32pow2(RING_SIZE), rte_socket_id(), RING_F_SP_ENQ | RING_F_SC_DEQ);
     }
 
     if (is_client == 0)
@@ -999,14 +1019,22 @@ int main(int argc, char **argv)
             }
             
             unsigned index_lcore = 0;
+            proxy_port_arg = 1;
             int has_client_been_started = 0;
-            int has_rx_been_start = 0;
+            int has_rx_been_started = 0;
             RTE_LCORE_FOREACH_WORKER(lcore_id)
             {
                 if(!has_client_been_started){
                     rte_eal_remote_launch(server_job, &demo_configs[lcore_id], lcore_id);
+                    has_client_been_started = 1;
                 }
-                else if
+                else if(!has_rx_been_started){
+                    rte_eal_remote_launch(proxy_rx_job, &demo_configs[lcore_id], lcore_id);
+                    has_rx_been_started = 1;
+                }
+                else{
+                    printf("not supposed to be here\n");
+                }
             }
         }
         else
@@ -1064,10 +1092,25 @@ int main(int argc, char **argv)
             unsigned index_lcore = 0;
 
             printf("Starting Picoquic (v%s) connection to server = %s, port = %d\n", PICOQUIC_VERSION, server_name, server_port);
+
+            
+            int has_client_been_started = 0;
+            int has_rx_been_started = 0;
+            proxy_port_arg = 0;
             RTE_LCORE_FOREACH_WORKER(lcore_id)
             {
-                rte_eal_remote_launch(client_job, &portids[index_lcore], lcore_id);
-                index_lcore++;
+                if(!has_client_been_started){
+                    rte_eal_remote_launch(client_job, &portids[index_lcore], lcore_id);
+                    index_lcore++;
+                    has_client_been_started = 1;
+                }
+                else if(!has_rx_been_started){
+                    rte_eal_remote_launch(proxy_rx_job, NULL, lcore_id);
+                    has_rx_been_started = 1;
+                }
+                else{
+                    printf("not supposed to be here\n");
+                }
             }
         }
         else
