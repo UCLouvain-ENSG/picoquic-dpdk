@@ -7,6 +7,7 @@ goodput_index = 2
 nb_pkt_index = 7
 perf_tp_index = 6
 
+
 class ItemToPlot:
     def __init__(self, label,getDataFunction,args):
         self.label = label
@@ -74,7 +75,7 @@ def comparison_plot_box(items,title,yLabel,outputFileName, xLabel = None):
     if xLabel != None:
         ax.set_xlabel(xLabel)
     plt.grid(True)
-    plt.savefig(outputFileName,format = 'pdf', dpi=300)
+    plt.savefig(outputFileName,format = 'pdf')
     plt.figure().clear()
     plt.close()
     plt.cla()
@@ -88,7 +89,7 @@ def comparison_plot_bar_proxy():
     plt.xlabel("UDP payload size (bytes)")
     plt.bar(labels,data,width=50)
     plt.grid(True)
-    plt.savefig("../plots/dgSizeProxycmp.pdf",format = 'pdf', dpi=300)
+    plt.savefig("../plots/dgSizeProxycmp.pdf",format = 'pdf')
     plt.figure().clear()
     plt.close()
     plt.cla()
@@ -307,7 +308,19 @@ def TCP_PROXY():
     items.append(ItemToPlot("{}".format("picoquic-dpdk-proxy"),get_full_data_perf,("../data/proxy/proxyTCP1200.txt",perf_tp_index)))
     items.append(ItemToPlot("{}".format("l2-forwarder"),get_full_data_perf,("../data/proxy/noproxyTCP1200.txt",perf_tp_index)))
     comparison_plot_box(items, " " ,"Throughput (Mbps)","../plots/TCP1200cmp.pdf")
-
+    
+def TCP_proxy_var_sizes_proxy():
+    items = []
+    for size in [100,300,500,700,1000,1200]:
+        items.append(ItemToPlot(size,get_full_data_perf,("../data/proxy/proxyTCP{}.txt".format(str(size)),perf_tp_index)))
+    comparison_plot_box(items, " ", "Throughput (Mbps)","../plots/TCP_pl_size_cmp_proxy.pdf","payload size")
+    
+def TCP_proxy_var_sizes_forwarder():
+    items = []
+    for size in [100,300,500,700,1000,1200]:
+        items.append(ItemToPlot(size,get_full_data_perf,("../data/proxy/noproxyTCP{}.txt".format(str(size)),perf_tp_index)))
+    comparison_plot_box(items, " ", "Throughput (Mbps)","../plots/TCP_pl_size_cmp_forwarder.pdf","payload size")
+        
 #######PROXY######
 
 
@@ -339,5 +352,7 @@ if __name__ == "__main__":
     #encryption_plot_NODPDK()
     #TCP_PROXY()
     #comparison_plot_bar_proxy()
-    batching64_plot()
+    #batching64_plot()
+    TCP_proxy_var_sizes_proxy()
+    TCP_proxy_var_sizes_forwarder()
 

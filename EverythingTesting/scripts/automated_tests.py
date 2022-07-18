@@ -24,7 +24,11 @@ def retrieve_cards(number):
                 return ret
     return ret
 
+
 #Global variables
+nsc='sudo ip netns exec nsCLIENT'
+nss='sudo ip netns exec nsSERVER'
+
 serverName = 'server'
 clientName = 'client1'
 process_name = 'dpdk_picoquicdemo'
@@ -34,6 +38,7 @@ dpdk8Client = '--dpdk -l 0-8 {} -- -A 50:6b:4b:f3:7c:71'.format(retrieve_cards(8
 dpdk1Server = '--dpdk -l 0-1 -a 0000:51:00.1 --'
 dpdkVarServer = '--dpdk -l 0-{} -a 0000:51:00.1 --'
 nodpdk = 'nodpdk'
+working_directory = '/home/nikita/memoire/dpdk_picoquic'
 
 
 def dic_to_json(dic):
@@ -49,6 +54,11 @@ def kill_process(host,pid):
     cmds = ['ssh',host,'nohup','sudo kill',str(pid)]
     return Popen(cmds, stdout=None, stderr=None, stdin=None)
 
+def run_command(command,host,directory):
+    cmds = ['ssh', host,'cd {}; {}'.format(directory,command)]
+    print(cmds)
+    return Popen(cmds, stdout=None, stderr=None, stdin=None)
+    
 def run_client(args):
     cmds = ['ssh', clientName,'python3','/home/nikita/memoire/dpdk_picoquic/EverythingTesting/scripts/client_for_tests.py',dic_to_json(args)]
     return Popen(cmds, stdout=None, stderr=None, stdin=None)
@@ -448,6 +458,56 @@ def test_batching_noCC_noPacing():
             time.sleep(5)
         time.sleep(10)
 
+
+#############PROXY TESTING#####################
+
+def clean_everything():
+    run_command("sh killDpdkProcess.sh",clientName,working_directory)
+    run_command("sh killForwarder.sh",clientName,working_directory)
+    run_command("sh killiperf3.sh",serverName,working_directory)
+    
+def proxy_general_testing():
+    #dpdk proxy
+    for i in range(5):
+        for size in range(100,1300,100):
+            
+            clientP1 = run_command("sh exec_scripts/serverProxy.sh >> /dev/null",clientName,working_directory)
+            time.sleep(3)
+            clientP2 = run_command("sh exec_scripts/clientProxy.sh >> /dev/null",clientName,working_directory)
+            time.sleep(3)
+            serverP1 = run_command(nss + " iperf3 -s >> /dev/null",serverName,working_directory)
+            time.sleep(3)
+            serverP2 = run_command(nsc + " iperf3 -M 1200 -c 10.10.0.2 -t 30 >> EverythingTesting/data/proxy/proxyTCP{}.txt".format(str(size)),serverName,working_directory)
+            serverP1.wait()
+            clean_everything();
+            time.sleep(3);
+    #forwarder        
+    for i in range(5):
+        for size in range(100,1300,100):        
+            clientP1 = run_command("sh exec_scripts/dpdk_relay2.sh >> /dev/null",clientName,working_directory)
+            time.sleep(3)
+            clientP2 = run_command("sh exec_scripts/dpdk_relay1.sh >> /dev/null",clientName,working_directory)
+            time.sleep(3)
+            serverP1 = run_command(nss + " iperf3 -s >> /dev/null",serverName,working_directory)
+            time.sleep(3)
+            serverP2 = run_command(nsc + " iperf3 -M 1200 -c 10.10.0.2 -t 30 >> EverythingTesting/data/proxy/noproxyTCP{}.txt".format(str(size)),serverName,working_directory)
+            serverP1.wait()
+            clean_everything();
+            time.sleep(3);
+            
+            
+            
+    
+    
+    
+
+#############PROXY TESTING#####################
+
+
+
+
+
+
 if __name__ == "__main__":
     #test_handshake()
     #test_server_scaling()
@@ -469,7 +529,8 @@ if __name__ == "__main__":
     #test_throughput256()
     #test_throughput128()
     #test_throughput20()
-    test_batching_fixed_RX64()
+    #test_batching_fixed_RX64()
+    proxy_general_testing()
         
         
     
