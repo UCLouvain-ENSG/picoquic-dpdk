@@ -76,6 +76,7 @@ struct token_bucket tb;
 int actual_size;
 int test_duration;
 uint64_t rate;
+uint64_t multiplier;
 
 static struct rte_eth_conf port_conf = {
     .rxmode = {
@@ -299,7 +300,7 @@ lcore_hello(__rte_unused void *arg)
     struct rte_ether_hdr *eth_hdr;
 
     char udp_payload[1200];
-    int my_counter = 0;
+    unsigned my_counter = 0;
     memset(udp_payload,48,1200);
     struct timeval start_time;
     struct timeval current_time;
@@ -308,39 +309,26 @@ lcore_hello(__rte_unused void *arg)
     struct timeval timer_increasing_tp_start;
     struct timeval timer_increasing_tp_finish;
     int fast_increasing = 0;
-
+    
 	gettimeofday(&start_time, NULL);
     uint64_t packet_counter = 0;
     // for(int i = 0; i<100000;i++)
     while (1)
     {
-        if(fast_increasing){
-            gettimeofday(&timer_increasing_tp_finish, NULL);
-            double elapsed_increasing =  (timer_increasing_tp_finish.tv_sec - timer_increasing_tp_start.tv_sec) + 
-                                        (timer_increasing_tp_finish.tv_usec - timer_increasing_tp_start.tv_usec) / 1000000.0;
-            if(elapsed_increasing > 2){
-                gettimeofday(&timer_increasing_tp_start, NULL);
-                rate = rate + rate*0.05;
-                configure_token_bucket(&tb, rate, ((u_int64_t ) 4) * rate);
-            }
-        }
+        
         memcpy(udp_payload,&my_counter,4);
         my_counter++;
 
         gettimeofday(&current_time, NULL);        
         double elapsed = 0.0;
 		elapsed = (current_time.tv_sec - start_time.tv_sec) + (current_time.tv_usec - start_time.tv_usec) / 1000000.0;
-        if(elapsed > test_duration){
-            
+        if(elapsed > 0.5){
+            u_int64_t new_rate = rate + ((uint64_t) (50*1000)) *multiplier;
+            configure_token_bucket(&tb, new_rate, ((u_int64_t ) 4) * new_rate);
+            rate = new_rate;
+            gettimeofday(&start_time, NULL);
         }
-        else if(elapsed > slow_start_delay && !slow_start_finished){
-            configure_token_bucket(&tb, rate, ((u_int64_t ) 4) * rate);
-            slow_start_finished = 1;
-            fast_increasing = 1;
-            gettimeofday(&timer_increasing_tp_start, NULL);
-            printf("slow start finished\n");
-
-        }
+       
         int offset = 0;
         m = rte_pktmbuf_alloc(mb_pool);
         
@@ -404,21 +392,23 @@ int main(int argc, char **argv)
 
     str_to_mac(argv[1],&eth_addr_peer);
     printf("==================argc : %d\n",argc);
+    
     actual_size = atoi(argv[2]);
-    rate = atoi(argv[3])*1000;
-    test_duration = atoi(argv[4]);
-    u_int64_t slow_start_rate = 100*1000;
-    init_token_bucket(&tb, slow_start_rate, ((u_int64_t ) 4) * slow_start_rate);
+    multiplier = (uint64_t) atoi(argv[3]);
+    printf("payload size : %d\n",actual_size);
+    printf("rate multiplier : %ld\n",multiplier);
+    rate = 100*1000;
+    init_token_bucket(&tb, rate, ((u_int64_t ) 4) * rate);
 
-
+    unsigned lcore_id;
     /* call lcore_hello() on every worker lcore */
-    // RTE_LCORE_FOREACH_WORKER(lcore_id)
-    // {
-    // 	rte_eal_remote_launch(lcore_hello, NULL, lcore_id);
-    // }
+    RTE_LCORE_FOREACH_WORKER(lcore_id)
+    {
+    	rte_eal_remote_launch(lcore_hello, NULL, lcore_id);
+    }
 
     /* call it on main lcore too */
-    lcore_hello(NULL);
+    // lcore_hello(NULL);
     rte_eal_mp_wait_lcore();
 
     /* clean up the EAL */

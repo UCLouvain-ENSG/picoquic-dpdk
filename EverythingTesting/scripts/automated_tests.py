@@ -465,9 +465,12 @@ def clean_everything():
     run_command("sh killDpdkProcess.sh",clientName,working_directory)
     run_command("sh killForwarder.sh",clientName,working_directory)
     run_command("sh killiperf3.sh",serverName,working_directory)
+    run_command("sh killUDP.sh",serverName,working_directory)
     
-def proxy_general_testing():
+def proxy_TCP_testing():
     #dpdk proxy
+    server = run_command("sh network_scripts/proxy_setup_server.sh",serverName,working_directory)
+    server.wait()
     for i in range(5):
         for size in range(100,1300,100):
             
@@ -475,15 +478,17 @@ def proxy_general_testing():
             time.sleep(3)
             clientP2 = run_command("sh exec_scripts/clientProxy.sh >> /dev/null",clientName,working_directory)
             time.sleep(3)
-            serverP2 = run_command(nss + " iperf3 -s >> /dev/null",serverName,working_directory)
+            serverP2 = run_command(nss + " taskset -c 2 iperf3 -s >> /dev/null",serverName,working_directory)
             time.sleep(3)
-            serverP1 = run_command(nsc + " iperf3 -M {} -c 10.10.0.2 -t 30 >> EverythingTesting/data/proxy/proxyTCP{}.txt".format(str(size),str(size)),serverName,working_directory)
+            serverP1 = run_command(nsc + " taskset -c 4 iperf3 -M {} -c 10.10.0.2 -t 30 >> EverythingTesting/data/proxy/proxyTCP{}.txt".format(str(size),str(size)),serverName,working_directory)
             serverP1.wait()
             clean_everything();
             time.sleep(3);
-    #forwarder        
-    for i in range(5):
-        for size in range(100,1300,100):        
+    #forwarder
+    server = run_command("sudo ip -all netns delete  ",serverName,working_directory)  
+    server.wait()        
+    for i in range(1):
+        for size in [1200]:        
             clientP1 = run_command("sh exec_scripts/dpdk_relay2.sh >> /dev/null",clientName,working_directory)
             time.sleep(3)
             clientP2 = run_command("sh exec_scripts/dpdk_relay1.sh >> /dev/null",clientName,working_directory)
@@ -492,6 +497,40 @@ def proxy_general_testing():
             time.sleep(3)
             serverP1 = run_command(nsc + " iperf3 -M {} -c 10.10.0.2 -t 30 >> EverythingTesting/data/proxy/noproxyTCP{}.txt".format(str(size),str(size)),serverName,working_directory)
             serverP1.wait()
+            clean_everything();
+            time.sleep(3);
+            
+            
+def proxy_UDP_testing():
+    #dpdk proxy
+    # server = run_command("sh network_scripts/proxy_setup_server.sh",serverName,working_directory)
+    # server.wait()
+    for i in range(5):
+        for size in range(100,1300,100):        
+            clientP1 = run_command("sh exec_scripts/serverProxy.sh >> /dev/null",clientName,working_directory)
+            time.sleep(3)
+            clientP2 = run_command("sh exec_scripts/clientProxy.sh >> /dev/null",clientName,working_directory)
+            time.sleep(3)
+            serverP2 = run_command("sh exec_scripts/proxy2.sh >> EverythingTesting/data/proxy/proxyUDP{}.txt".format(str(size)),serverName,working_directory)
+            time.sleep(3)
+            serverP1 = run_command("sh exec_scripts/proxy1.sh {} 1 >> /dev/null".format(str(size)),serverName,working_directory)
+            serverP2.wait()
+            clean_everything();
+            time.sleep(3);
+    #forwarder
+    
+    # server = run_command("sudo ip -all netns delete  ",serverName,working_directory)  
+    # server.wait()   
+    for i in range(5):
+        for size in range(100,1300,100):        
+            clientP1 = run_command("sh exec_scripts/dpdk_relay2.sh >> /dev/null",clientName,working_directory)
+            time.sleep(3)
+            clientP2 = run_command("sh exec_scripts/dpdk_relay1.sh >> /dev/null",clientName,working_directory)
+            time.sleep(3)
+            serverP2 = run_command("sh exec_scripts/proxy2.sh >> EverythingTesting/data/proxy/noproxyUDP{}.txt".format(str(size)),serverName,working_directory)
+            time.sleep(3)
+            serverP1 = run_command("sh exec_scripts/proxy1.sh {} 10 >> /dev/null".format(str(size)),serverName,working_directory)
+            serverP2.wait()
             clean_everything();
             time.sleep(3);
             
@@ -530,7 +569,7 @@ if __name__ == "__main__":
     #test_throughput128()
     #test_throughput20()
     #test_batching_fixed_RX64()
-    proxy_general_testing()
+    proxy_UDP_testing()
         
         
     

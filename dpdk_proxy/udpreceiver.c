@@ -127,10 +127,12 @@ lcore_hello(__rte_unused void *arg)
 	int packet_counter = 0;
 	uint64_t global_packet_counter = 0;
 	uint64_t goodput = 0;
+	uint64_t previous_goodput = 0;
 	struct timeval start_time;
     struct timeval current_time;
 	int empty_cycle_counter = 0;
 	gettimeofday(&start_time, NULL);
+	unsigned expected_seqnum = 0;
 	while (true)
 	{
 		ret = rte_eth_rx_burst(0, 0, pkts_burst, MAX_PKT_BURST);
@@ -147,22 +149,23 @@ lcore_hello(__rte_unused void *arg)
 				struct rte_udp_hdr *udp_hdr = (struct rte_udp_hdr *)((unsigned char *)ip_hdr +
 																sizeof(struct rte_ipv4_hdr));
 				unsigned char *payload = (unsigned char *)(udp_hdr + 1);
-				int msg;
-				memcpy(&msg,payload,4);
-				//printf("id : %d\n",msg);
+				unsigned seqnum;
+				memcpy(&seqnum,payload,4);
+				//printf("id : %d\n",seqnum);
 				rte_be16_t length = udp_hdr->dgram_len;
 				uint64_t payload_length = htons(length) - sizeof(struct rte_udp_hdr);
 				goodput += payload_length;
 				packet_counter++;
-				if(msg != global_packet_counter){
-					// printf("loss detected at packet %d\n",global_packet_counter);
-					// printf("expected : %d\n",global_packet_counter);
-					// printf("actual : %d\n",msg);
+				if(seqnum != expected_seqnum){
+					printf("loss detected at packet %d\n",global_packet_counter);
+					printf("expected : %d\n",global_packet_counter);
+					printf("actual : %d\n",seqnum);
 					printf("packet lost\n");
+					// expected_seqnum = seqnum;
 					return;
-					global_packet_counter = msg;
 				}
 				global_packet_counter++;
+				expected_seqnum++;
 			}
 			rte_pktmbuf_free(pkts_burst[j]);
 
@@ -171,10 +174,10 @@ lcore_hello(__rte_unused void *arg)
 		gettimeofday(&current_time, NULL);
 		double elapsed = 0.0;
 		elapsed = (current_time.tv_sec - start_time.tv_sec) + (current_time.tv_usec - start_time.tv_usec) / 1000000.0;
-		if(elapsed > 2){
+		if(elapsed > 1){
 			if(packet_counter == 0){
 				empty_cycle_counter++;
-				if(empty_cycle_counter>=6){
+				if(empty_cycle_counter>=10){
 					break;
 				}
 			}
@@ -182,7 +185,12 @@ lcore_hello(__rte_unused void *arg)
 				empty_cycle_counter = 0;
 			}
 			printf("goodput : %lf\n", ((goodput*8)/1000000)/elapsed);
+			if(goodput<previous_goodput){
+				printf("goodput decreased\n");
+				return 0;
+			}
 			printf("number of packets : %lu\n",packet_counter);
+			previous_goodput = goodput;
 			goodput = 0;
 			packet_counter = 0;
 			gettimeofday(&start_time, NULL);
@@ -204,9 +212,14 @@ int main(int argc, char **argv)
 		rte_panic("Cannot init EAL\n");
 
 	/* call lcore_hello() on every worker lcore */
+	RTE_LCORE_FOREACH_WORKER(lcore_id)
+    {
+    	rte_eal_remote_launch(lcore_hello, NULL, lcore_id);
+    }
+
 
 	/* call it on main lcore too */
-	lcore_hello(NULL);
+	//lcore_hello(NULL);
 
 	rte_eal_mp_wait_lcore();
 
