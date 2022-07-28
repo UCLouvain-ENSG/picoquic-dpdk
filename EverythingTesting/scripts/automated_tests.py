@@ -32,10 +32,10 @@ nss='sudo ip netns exec nsSERVER'
 serverName = 'server'
 clientName = 'client1'
 process_name = 'dpdk_picoquicdemo'
-dpdk1Client = '--dpdk -l 0-1 -a 0000:8a:00.1 -- -A 50:6b:4b:f3:7c:71'
+dpdk1Client = '--dpdk -l 0-1 -a 0000:18:00.1 -- -A 50:6b:4b:f3:7c:70'
 dpdk15Client = '--dpdk -l 0-15 {} -- -A 50:6b:4b:f3:7c:71'.format(retrieve_cards(15))
 dpdk8Client = '--dpdk -l 0-8 {} -- -A 50:6b:4b:f3:7c:71'.format(retrieve_cards(8))
-dpdk1Server = '--dpdk -l 0-1 -a 0000:51:00.1 --'
+dpdk1Server = '--dpdk -l 0-1 -a 0000:18:00.0 --'
 dpdkVarServer = '--dpdk -l 0-{} -a 0000:51:00.1 --'
 nodpdk = 'nodpdk'
 working_directory = '/home/nikita/memoire/dpdk_picoquic'
@@ -462,10 +462,12 @@ def test_batching_noCC_noPacing():
 #############PROXY TESTING#####################
 
 def clean_everything():
-    run_command("sh killDpdkProcess.sh",clientName,working_directory)
-    run_command("sh killForwarder.sh",clientName,working_directory)
-    run_command("sh killiperf3.sh",serverName,working_directory)
-    run_command("sh killUDP.sh",serverName,working_directory)
+    p1 = run_command("sh killDpdkProcess.sh",clientName,working_directory)
+    p2 = run_command("sh killForwarder.sh",clientName,working_directory)
+    p3 = run_command("sh killiperf3.sh",serverName,working_directory)
+    p4 = run_command("sh killUDP.sh",serverName,working_directory)
+    for p in [p1,p2,p3,p4]:
+        p.wait()
     
 def proxy_TCP_testing():
     #dpdk proxy
@@ -521,18 +523,19 @@ def proxy_UDP_testing():
     
     # server = run_command("sudo ip -all netns delete  ",serverName,working_directory)  
     # server.wait()   
-    for i in range(5):
-        for size in range(100,1300,100):        
-            clientP1 = run_command("sh exec_scripts/dpdk_relay2.sh >> /dev/null",clientName,working_directory)
-            time.sleep(3)
-            clientP2 = run_command("sh exec_scripts/dpdk_relay1.sh >> /dev/null",clientName,working_directory)
-            time.sleep(3)
-            serverP2 = run_command("sh exec_scripts/proxy2.sh >> EverythingTesting/data/proxy/noproxyUDP{}.txt".format(str(size)),serverName,working_directory)
-            time.sleep(3)
-            serverP1 = run_command("sh exec_scripts/proxy1.sh {} 10 >> /dev/null".format(str(size)),serverName,working_directory)
-            serverP2.wait()
-            clean_everything();
-            time.sleep(3);
+    # for i in range(5):
+    #     for size in range(100,1300,100):        
+    #         clientP1 = run_command("sh exec_scripts/dpdk_relay2.sh >> /dev/null",clientName,working_directory)
+    #         time.sleep(3)
+    #         clientP2 = run_command("sh exec_scripts/dpdk_relay1.sh >> /dev/null",clientName,working_directory)
+    #         time.sleep(3)
+    #         serverP2 = run_command("sh exec_scripts/proxy2.sh >> EverythingTesting/data/proxy/noproxyUDP{}.txt".format(str(size)),serverName,working_directory)
+    #         time.sleep(3)
+    #         serverP1 = run_command("sh exec_scripts/proxy1.sh {} 10 >> /dev/null".format(str(size)),serverName,working_directory)
+    #         serverP2.wait()
+    #         clean_everything();
+    #         time.sleep(3);
+    #         print("Size {} finished",size)
             
             
             

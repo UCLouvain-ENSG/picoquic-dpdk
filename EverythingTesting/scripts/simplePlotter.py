@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import re
 
 throughput_index = 6
 time_index = 4
@@ -45,14 +46,36 @@ def get_full_data(file,index):
 def get_full_data_perf(file,index):
     file1 = open(file, 'r')
     data = []
-    while True:
-        line = file1.readline()
-        if not line:
-            break
-        tab = line.split()
-        data.append(float(tab[index])*1000.0)
+    for line in file1:
+        if re.search("sender",line):
+            tab = line.split()
+            unit = (tab[index + 1].split('/'))[0]
+            if unit == "Gbits":
+                data.append(float(tab[index])*1000.0)
+            elif unit == "Mbits":
+                data.append(float(tab[index]))
+            else:
+                print("wrong unit")
     return data
 
+def get_full_data_UDP(file,index):
+    file1 = open(file, 'r')
+    data = []
+    my_max = 0
+    for line in file1:
+        
+        if re.search("decreased", line):
+            data.append(my_max)
+            my_max = 0
+            
+        elif re.search("goodput", line):
+            tokens = line.split()
+            gp  = float(tokens[index])
+            my_max = max(my_max,gp)
+            
+        
+    return data
+    
 
 def comparison_plot_bar(items,title,yLabel,outputFileName):
     data = [i.getData() for i in items]
@@ -63,7 +86,7 @@ def comparison_plot_bar(items,title,yLabel,outputFileName):
     plt.grid(True)
     plt.savefig(outputFileName)
     
-def comparison_plot_box(items,title,yLabel,outputFileName, xLabel = None):
+def comparison_plot_box(items,title,yLabel,outputFileName, xLabel = None, yTicks = None):
     print(xLabel)
     data = [i.getData() for i in items]
     labels = [i.label for i in items]
@@ -74,6 +97,8 @@ def comparison_plot_box(items,title,yLabel,outputFileName, xLabel = None):
     ax.set_ylabel(yLabel)
     if xLabel != None:
         ax.set_xlabel(xLabel)
+    if yTicks != None:
+        plt.yticks(yTicks)
     plt.grid(True)
     plt.savefig(outputFileName,format = 'pdf')
     plt.figure().clear()
@@ -303,6 +328,14 @@ def encryption_plot_NODPDK():
 
 #######PROXY######
 
+def get_full_data_perf_nb_packets(file,index,size):
+    res = get_full_data_perf(file,index)
+    return [x*1000000/8/size for x in res]
+
+def get_full_data_UDP_nb_packets(file,index,size):
+    res = get_full_data_UDP(file,index)
+    return [x*1000000/8/size for x in res]
+
 def TCP_PROXY():
     items = []
     items.append(ItemToPlot("{}".format("picoquic-dpdk-proxy"),get_full_data_perf,("../data/proxy/proxyTCP1200.txt",perf_tp_index)))
@@ -311,17 +344,51 @@ def TCP_PROXY():
     
 def TCP_proxy_var_sizes_proxy():
     items = []
-    for size in [100,300,500,700,1000,1200]:
+    for size in range(100,1300,100):
         items.append(ItemToPlot(size,get_full_data_perf,("../data/proxy/proxyTCP{}.txt".format(str(size)),perf_tp_index)))
-    comparison_plot_box(items, " ", "Throughput (Mbps)","../plots/TCP_pl_size_cmp_proxy.pdf","payload size")
+    comparison_plot_box(items, " ", "Throughput (Mbps)","../plots/TCP_pl_size_cmp_proxy.pdf","payload size",range(0,11000,1000))
     
 def TCP_proxy_var_sizes_forwarder():
     items = []
-    for size in [100,300,500,700,1000,1200]:
+    for size in range(100,1300,100):
+        items.append(ItemToPlot(size,get_full_data_perf,("../data/proxy/noproxyTCP{}.txt".format(str(size)),perf_tp_index)))
+    comparison_plot_box(items, " ", "Throughput (Mbps)","../plots/TCP_pl_size_cmp_forwarder.pdf","payload size")
+    
+    
+def TCP_proxy_var_sizes_proxy_nb_packets():
+    items = []
+    for size in range(100,1300,100):
+        items.append(ItemToPlot(size,get_full_data_perf_nb_packets,("../data/proxy/proxyTCP{}.txt".format(str(size)),perf_tp_index,size)))
+    comparison_plot_box(items, " ", "Number of packets transmitted per second","../plots/TCP_pl_size_cmp_proxy_nb_packets.pdf","payload size")
+    
+def TCP_proxy_var_sizes_forwarder():
+    items = []
+    for size in range(100,1300,100):
         items.append(ItemToPlot(size,get_full_data_perf,("../data/proxy/noproxyTCP{}.txt".format(str(size)),perf_tp_index)))
     comparison_plot_box(items, " ", "Throughput (Mbps)","../plots/TCP_pl_size_cmp_forwarder.pdf","payload size")
         
+        
+def UDP_proxy_var_sizes_proxy():
+    items = []
+    for size in range(100,1300,100):
+        items.append(ItemToPlot(size,get_full_data_UDP,("../data/proxy/proxyUDP{}.txt".format(str(size)),2)))
+    comparison_plot_box(items, " ", "Throughput (Mbps)","../plots/UDP_pl_size_cmp_proxy.pdf","payload size",range(0,11000,1000))
+    
+def UDP_proxy_var_sizes_proxy_nb_packets():
+    items = []
+    for size in range(100,1300,100):
+        items.append(ItemToPlot(size,get_full_data_UDP_nb_packets,("../data/proxy/proxyUDP{}.txt".format(str(size)),2,size)))
+    comparison_plot_box(items, " ", "Number of packets transmitted per second","../plots/UDP_pl_size_cmp_proxy_nb_packets.pdf","payload size")
+    
+def UDP_proxy_var_sizes_forwarder():
+    items = []
+    for size in range(100,1300,100):
+        items.append(ItemToPlot(size,get_full_data_UDP,("../data/proxy/noproxyUDP{}.txt".format(str(size)),2)))
+    comparison_plot_box(items, " ", "Throughput (Mbps)","../plots/UDP_pl_size_cmp_forwarder.pdf","payload size")
+    
 #######PROXY######
+
+
 
 
 
@@ -353,6 +420,12 @@ if __name__ == "__main__":
     #TCP_PROXY()
     #comparison_plot_bar_proxy()
     #batching64_plot()
-    TCP_proxy_var_sizes_proxy()
-    TCP_proxy_var_sizes_forwarder()
+    # TCP_proxy_var_sizes_proxy()
+    # TCP_proxy_var_sizes_forwarder()
+    # UDP_proxy_var_sizes_proxy()
+    # UDP_proxy_var_sizes_forwarder()
+    
+    TCP_proxy_var_sizes_proxy_nb_packets()
+    UDP_proxy_var_sizes_proxy_nb_packets()
+    
 

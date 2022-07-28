@@ -1,0 +1,417 @@
+before start 
+loop start
+mac : 32:af:e5:33:4f:ac
+goodput : 0.000000
+number of packets : 0
+goodput : 0.000000
+number of packets : 0
+goodput : 58.999941
+number of packets : 10660
+goodput : 157.999842
+number of packets : 28390
+goodput : 258.999741
+number of packets : 46371
+goodput : 359.999640
+number of packets : 64357
+goodput : 460.999539
+number of packets : 82335
+goodput : 560.999439
+number of packets : 100318
+goodput : 661.999338
+number of packets : 118300
+goodput : 762.999237
+number of packets : 136285
+goodput : 862.999137
+number of packets : 154268
+goodput : 963.999036
+number of packets : 172250
+goodput : 1064.998935
+number of packets : 190221
+goodput : 1164.998835
+number of packets : 208185
+goodput : 1265.998734
+number of packets : 226173
+goodput : 1366.998633
+number of packets : 244150
+goodput : 1467.998532
+number of packets : 262143
+goodput : 1567.998432
+number of packets : 280120
+goodput : 1668.998331
+number of packets : 298110
+goodput : 1769.998230
+number of packets : 316079
+goodput : 1869.998130
+number of packets : 334070
+goodput : 1970.998029
+number of packets : 352048
+goodput : 2071.997928
+number of packets : 370035
+goodput : 2171.997828
+number of packets : 388013
+goodput : 2272.997727
+number of packets : 406007
+goodput : 2373.997626
+number of packets : 423985
+goodput : 2473.997526
+number of packets : 441960
+goodput : 2574.997425
+number of packets : 459947
+goodput : 2675.997324
+number of packets : 477922
+goodput : 2776.997223
+number of packets : 495913
+goodput : 2876.997123
+number of packets : 513885
+goodput : 2977.997022
+number of packets : 531886
+goodput : 3078.996921
+number of packets : 549855
+goodput : 3178.996821
+number of packets : 567837
+goodput : 3279.996720
+number of packets : 585821
+goodput : 3380.996619
+number of packets : 603804
+goodput : 3480.996519
+number of packets : 621782
+goodput : 3581.996418
+number of packets : 639771
+goodput : 3682.996317
+number of packets : 657754
+goodput : 3783.996216
+number of packets : 675733
+goodput : 3883.996116
+number of packets : 693711
+goodput : 3984.996015
+number of packets : 711702
+goodput : 4085.995914
+number of packets : 729681
+goodput : 4185.995814
+number of packets : 747665
+goodput : 4286.995713
+number of packets : 765643
+goodput : 4387.995612
+number of packets : 783618
+goodput : 4488.995511
+number of packets : 801617
+goodput : 4588.995411
+number of packets : 819593
+goodput : 4689.995310
+number of packets : 837586
+goodput : 4790.995209
+number of packets : 855583
+goodput : 4890.995109
+number of packets : 873523
+goodput : 4991.995008
+number of packets : 891529
+goodput : 5092.994907
+number of packets : 909489
+goodput : 5192.994807
+number of packets : 927490
+goodput : 5293.994706
+number of packets : 945473
+goodput : 5394.994605
+number of packets : 963474
+goodput : 5494.994505
+number of packets : 981417
+goodput : 5595.994404
+number of packets : 999434
+goodput : 5696.994303
+number of packets : 1017404
+goodput : 5797.994202
+number of packets : 1035402
+goodput : 5897.994102
+number of packets : 1053358
+goodput : 5998.994001
+number of packets : 1071368
+goodput : 6099.993900
+number of packets : 1089332
+goodput : 6199.993800
+number of packets : 1107308
+goodput : 6300.993699
+number of packets : 1125289
+goodput : 6401.993598
+number of packets : 1143263
+goodput : 6484.993515
+number of packets : 1158088
+goodput : 6187.993812
+goodput decreased
+before start 
+loop start
+mac : 32:af:e5:33:4f:ac
+goodput : 0.000000
+number of packets : 0
+goodput : 0.000000
+number of packets : 0
+goodput : 43.999956
+number of packets : 7910
+goodput : 142.999857
+number of packets : 25550
+goodput : 242.999757
+number of packets : 43533
+goodput : 343.999656
+number of packets : 61516
+goodput : 444.999555
+number of packets : 79496
+goodput : 544.999455
+number of packets : 97478
+goodput : 645.999354
+number of packets : 115462
+goodput : 746.999253
+number of packets : 133444
+goodput : 846.999153
+number of packets : 151426
+goodput : 947.999052
+number of packets : 169410
+goodput : 1048.998951
+number of packets : 187391
+goodput : 1149.998850
+number of packets : 205373
+goodput : 1249.998750
+number of packets : 223355
+goodput : 1350.998649
+number of packets : 241341
+goodput : 1451.998548
+number of packets : 259323
+goodput : 1551.998448
+number of packets : 277301
+goodput : 1652.998347
+number of packets : 295286
+goodput : 1753.998246
+number of packets : 313269
+goodput : 1854.998145
+number of packets : 331250
+goodput : 1954.998045
+number of packets : 349234
+goodput : 2055.997944
+number of packets : 367210
+goodput : 2155.997844
+number of packets : 385176
+goodput : 2256.997743
+number of packets : 403171
+goodput : 2357.997642
+number of packets : 421134
+goodput : 2458.997541
+number of packets : 439123
+goodput : 2558.997441
+number of packets : 457112
+goodput : 2659.997340
+number of packets : 475078
+goodput : 2760.997239
+number of packets : 493055
+goodput : 2860.997139
+number of packets : 511059
+goodput : 2961.997038
+number of packets : 529037
+goodput : 3062.996937
+number of packets : 547016
+goodput : 3163.996836
+number of packets : 565004
+goodput : 3263.996736
+number of packets : 582973
+goodput : 3364.996635
+number of packets : 600970
+goodput : 3465.996534
+number of packets : 618952
+goodput : 3565.996434
+number of packets : 636928
+goodput : 3666.996333
+number of packets : 654905
+goodput : 3767.996232
+number of packets : 672902
+goodput : 3867.996132
+number of packets : 690854
+goodput : 3968.996031
+number of packets : 708866
+goodput : 4069.995930
+number of packets : 726846
+goodput : 4169.995830
+number of packets : 744806
+goodput : 4270.995729
+number of packets : 762795
+goodput : 4371.995628
+number of packets : 780795
+goodput : 4472.995527
+number of packets : 798774
+goodput : 4572.995427
+number of packets : 816754
+goodput : 4673.995326
+number of packets : 834740
+goodput : 4774.995225
+number of packets : 852707
+goodput : 4874.995125
+number of packets : 870692
+goodput : 4975.995024
+number of packets : 888690
+goodput : 5076.994923
+number of packets : 906654
+goodput : 5176.994823
+number of packets : 924638
+goodput : 5277.994722
+number of packets : 942605
+goodput : 5378.994621
+number of packets : 960583
+goodput : 5479.994520
+number of packets : 978599
+goodput : 5579.994420
+number of packets : 996562
+goodput : 5680.994319
+number of packets : 1014551
+goodput : 5781.994218
+number of packets : 1032575
+goodput : 5881.994118
+number of packets : 1050498
+goodput : 5982.994017
+number of packets : 1068499
+goodput : 6083.993916
+number of packets : 1086452
+goodput : 6184.993815
+number of packets : 1104508
+goodput : 6284.993715
+number of packets : 1122453
+goodput : 6383.993616
+number of packets : 1140079
+goodput : 6459.993540
+number of packets : 1153722
+goodput : 6262.993737
+goodput decreased
+before start 
+loop start
+mac : 32:af:e5:33:4f:ac
+goodput : 0.000000
+number of packets : 0
+goodput : 0.000000
+number of packets : 0
+goodput : 44.999955
+number of packets : 8178
+goodput : 143.999856
+number of packets : 25800
+goodput : 244.999755
+number of packets : 43783
+goodput : 344.999655
+number of packets : 61765
+goodput : 445.999554
+number of packets : 79746
+goodput : 546.999453
+number of packets : 97729
+goodput : 646.999353
+number of packets : 115711
+goodput : 747.999252
+number of packets : 133696
+goodput : 848.999151
+number of packets : 151677
+goodput : 949.999050
+number of packets : 169659
+goodput : 1049.998950
+number of packets : 187639
+goodput : 1150.998849
+number of packets : 205623
+goodput : 1251.998748
+number of packets : 223605
+goodput : 1351.998648
+number of packets : 241589
+goodput : 1452.998547
+number of packets : 259571
+goodput : 1553.998446
+number of packets : 277554
+goodput : 1653.998346
+number of packets : 295535
+goodput : 1754.998245
+number of packets : 313520
+goodput : 1855.998144
+number of packets : 331503
+goodput : 1956.998043
+number of packets : 349478
+goodput : 2056.997943
+number of packets : 367463
+goodput : 2157.997842
+number of packets : 385448
+goodput : 2258.997741
+number of packets : 403432
+goodput : 2358.997641
+number of packets : 421411
+goodput : 2459.997540
+number of packets : 439394
+goodput : 2560.997439
+number of packets : 457374
+goodput : 2660.997339
+number of packets : 475352
+goodput : 2761.997238
+number of packets : 493342
+goodput : 2862.997137
+number of packets : 511322
+goodput : 2963.997036
+number of packets : 529306
+goodput : 3063.996936
+number of packets : 547278
+goodput : 3164.996835
+number of packets : 565264
+goodput : 3265.996734
+number of packets : 583254
+goodput : 3365.996634
+number of packets : 601233
+goodput : 3466.996533
+number of packets : 619215
+goodput : 3567.996432
+number of packets : 637198
+goodput : 3667.996332
+number of packets : 655176
+goodput : 3768.996231
+number of packets : 673168
+goodput : 3869.996130
+number of packets : 691162
+goodput : 3970.996029
+number of packets : 709145
+goodput : 4070.995929
+number of packets : 727113
+goodput : 4171.995828
+number of packets : 745107
+goodput : 4272.995727
+number of packets : 763060
+goodput : 4372.995627
+number of packets : 781059
+goodput : 4473.995526
+number of packets : 799023
+goodput : 4574.995425
+number of packets : 817018
+goodput : 4675.995324
+number of packets : 835006
+goodput : 4775.995224
+number of packets : 852981
+goodput : 4876.995123
+number of packets : 870968
+goodput : 4977.995022
+number of packets : 888956
+goodput : 5077.994922
+number of packets : 906940
+goodput : 5178.994821
+number of packets : 924941
+goodput : 5279.994720
+number of packets : 942898
+goodput : 5380.994619
+number of packets : 960896
+goodput : 5480.994519
+number of packets : 978878
+goodput : 5581.994418
+number of packets : 996826
+goodput : 5682.994317
+number of packets : 1014836
+goodput : 5782.994217
+number of packets : 1032820
+goodput : 5883.994116
+number of packets : 1050800
+goodput : 5984.994015
+number of packets : 1068771
+goodput : 6084.993915
+number of packets : 1086749
+goodput : 6185.993814
+number of packets : 1104741
+goodput : 6286.993713
+number of packets : 1122718
+goodput : 6384.993615
+number of packets : 1140279
+goodput : 6464.993535
+number of packets : 1154525
+goodput : 6232.993767
+goodput decreased
