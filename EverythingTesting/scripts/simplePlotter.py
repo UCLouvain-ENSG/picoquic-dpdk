@@ -131,7 +131,7 @@ def throughput_comparison_plot_bar():
 def throughput_comparison_plot_box():
     item1 = ItemToPlot("picoquic",get_full_data,("../data/throughputBBR_nodpdk.txt",throughput_index))
     item2 = ItemToPlot("picoquic-dpdk",get_full_data,("../data/throughputBBR_dpdk.txt",throughput_index))
-    comparison_plot_box([item1,item2],"","Throughput(Mbps)","../plots/Throughput_box.png")
+    comparison_plot_box([item1,item2],"","Throughput(Mbps)","../plots/Throughput_box.pdf")
     
     
 def handshake_time_comparison_plot_box():
@@ -140,7 +140,7 @@ def handshake_time_comparison_plot_box():
         return [d*(10**6) for d in data]
     item1 = ItemToPlot("picoquic",dataFunction,("../data/handshakeBBRfixed_nodpdk.txt",time_index))
     item2 = ItemToPlot("picoquic-dpdk",dataFunction,("../data/handshakeBBRfixed_dpdk.txt",time_index))
-    comparison_plot_box([item1,item2],"","Request time (us)","../plots/handshake_time_box.png")
+    comparison_plot_box([item1,item2],"","Request time (us)","../plots/handshake_time_box.pdf")
     
 def handshake_time_comparison_plot_box_clean():
     def dataFunction(file,index):
@@ -148,7 +148,7 @@ def handshake_time_comparison_plot_box_clean():
         return [d*(10**6) for d in data if d*(10**6) < 50000]
     item1 = ItemToPlot("picoquic",dataFunction,("../data/handshakeBBR_nodpdk.txt",time_index))
     item2 = ItemToPlot("picoquic-dpdk",dataFunction,("../data/handshakeBBR_dpdk.txt",time_index))
-    comparison_plot_box([item1,item2],"","Request time (us)","../plots/handshake_time_box_clean.png")
+    comparison_plot_box([item1,item2],"","Request time (us)","../plots/handshake_time_box_clean.pdf")
     
 def handshake_comparison_plot():
     def dataFunction(file,index):
@@ -156,7 +156,15 @@ def handshake_comparison_plot():
         return [d/20 for d in data]
     item1 = ItemToPlot("nodpdk",dataFunction,("../data/handshake_nodpdk.txt",request_index))
     item2 = ItemToPlot("dpdk",dataFunction,("../data/handshake_dpdk.txt",request_index))
-    comparison_plot_box([item1,item2],"Handshake performance","Number of handshake completed (hz)","../plots/HandshakeComparison.png")
+    comparison_plot_box([item1,item2],"Handshake performance","Number of handshake completed (hz)","../plots/HandshakeComparison.pdf")
+    
+def request_comparison_plot():
+    def dataFunction(file,index):
+        data = get_full_data(file,index)
+        return [d*(10**6) for d in data]
+    item1 = ItemToPlot("picoquic",dataFunction,("../data/request_100_nodpdk.txt",time_index))
+    item2 = ItemToPlot("picoquic-dpdk",dataFunction,("../data/request_100_dpdk.txt",time_index))
+    comparison_plot_box([item1,item2],"","Request time (us)","../plots/request_time_box.pdf")
     
     
 def server_scaling_plot():
@@ -266,7 +274,7 @@ def batching_plot_with_128RX():
         items.append(item)
     comparison_plot_box(items, "Batching size impact on throughput (10GB) fixed 128RX","Throughput (Mbps)","../plots/batching_10GB_128RX.png")
 
-
+    
 ###BATCHING###
 
 
@@ -425,7 +433,11 @@ if __name__ == "__main__":
     # UDP_proxy_var_sizes_proxy()
     # UDP_proxy_var_sizes_forwarder()
     
-    TCP_proxy_var_sizes_proxy_nb_packets()
-    UDP_proxy_var_sizes_proxy_nb_packets()
+    # TCP_proxy_var_sizes_proxy_nb_packets()
+    # UDP_proxy_var_sizes_proxy_nb_packets()
+    
+    request_comparison_plot()
+    throughput_comparison_plot_box()
+    handshake_time_comparison_plot_box()
     
 

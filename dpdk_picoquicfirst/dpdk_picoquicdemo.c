@@ -129,7 +129,11 @@ static const char *default_server_name = "::";
 
 //proxy
 
+//for TCP
 #define RING_SIZE 8192
+
+//for UDP
+//#define RING_SIZE 4096
 
 struct rte_mempool *mb_pools[MAX_NB_OF_PORTS_AND_LCORES];
 struct rte_eth_dev_tx_buffer *tx_buffers[MAX_NB_OF_PORTS_AND_LCORES];
@@ -998,7 +1002,6 @@ int main(int argc, char **argv)
                 demo_configs[lcore_id].is_running = 1;
                 demo_configs[lcore_id].queueid = index_lcore;
                 demo_configs[lcore_id].bind = bind[index_lcore % bind_n];
-
                 index_lcore++;
             }
         }

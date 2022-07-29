@@ -177,7 +177,7 @@ lcore_hello(__rte_unused void *arg)
 		if(elapsed > 1){
 			if(packet_counter == 0){
 				empty_cycle_counter++;
-				if(empty_cycle_counter>=10){
+				if(empty_cycle_counter>=15){
 					break;
 				}
 			}

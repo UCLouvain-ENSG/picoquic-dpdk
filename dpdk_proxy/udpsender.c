@@ -312,7 +312,7 @@ lcore_hello(__rte_unused void *arg)
     
 	gettimeofday(&start_time, NULL);
     uint64_t packet_counter = 0;
-    // for(int i = 0; i<100000;i++)
+    // for(int i = 0; i<10000;i++)
     while (1)
     {
         

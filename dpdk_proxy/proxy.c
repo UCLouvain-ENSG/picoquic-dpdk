@@ -216,6 +216,73 @@ int rcv_encapsulate_send(picoquic_cnx_t* cnx,proxy_ctx_t * ctx) {
     return 0; 
 }
 
+int rcv_encapsulate_send2(picoquic_cnx_t* cnx,proxy_ctx_t * ctx, uint8_t* bytes, size_t available) {
+    int length = 0;
+    int udp_dgram_offset = sizeof(struct rte_ipv4_hdr) + sizeof(struct rte_udp_hdr);
+    int MAX_PKT_BURST = 32;
+    struct rte_mbuf *pkt[1];
+    struct rte_ether_addr eth_addr;
+    // printf("portid : %d\n",ctx->portid);
+    int ret = rte_eth_macaddr_get(ctx->portid, &eth_addr);
+
+
+    // char macStr[18];
+
+    // snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x", eth_addr.addr_bytes[0], 
+    //                                                                 eth_addr.addr_bytes[1], 
+    //                                                                 eth_addr.addr_bytes[2], 
+    //                                                                 eth_addr.addr_bytes[3], 
+    //                                                                 eth_addr.addr_bytes[4], 
+    //                                                                 eth_addr.addr_bytes[5]);
+
+                      
+
+    uint32_t n = rte_ring_dequeue_bulk_start(ctx->rx_to_worker_ring, &pkt, 1, NULL);
+
+    if (n != 0) {
+        struct rte_ether_hdr *eth_hdr = rte_pktmbuf_mtod(pkt[0], struct rte_ether_hdr *);
+        if (eth_hdr->ether_type == rte_cpu_to_be_16(RTE_ETHER_TYPE_IPV4)){
+            int ret = 0;
+            struct rte_ipv4_hdr *ip_hdr;
+            ip_hdr = (struct rte_ipv4_hdr *)(rte_pktmbuf_mtod(pkt[0], char *) + sizeof(struct rte_ether_hdr));
+
+            struct rte_udp_hdr *udp = (struct rte_udp_hdr *)((unsigned char *)ip_hdr +
+                                                            sizeof(struct rte_ipv4_hdr));
+            unsigned char *payload = (unsigned char *)(udp + 1);
+
+            // int msg;
+			// memcpy(&msg,payload,4);
+			//printf("id : %d\n",msg);
+
+            length = htons(ip_hdr->total_length);
+            if(length > 1300){
+                printf("error\n");
+                return -1;
+            }
+            //printf("length : %d\n",pkts_burst[j]->pkt_len);
+            if(length<=available){
+                bytes = picoquic_provide_datagram_buffer(bytes, length);
+                if(bytes != NULL){
+                    rte_memcpy(bytes,ip_hdr,length);
+                    rte_ring_dequeue_finish(ctx->rx_to_worker_ring, n);
+                    
+                }
+                rte_pktmbuf_free(pkt[0]);
+            }
+            else{
+                rte_ring_dequeue_finish(ctx->rx_to_worker_ring, 0);
+            }
+            
+        }
+        else{
+            rte_ring_dequeue_finish(ctx->rx_to_worker_ring, n);
+            rte_pktmbuf_free(pkt[0]);
+
+        }      
+    }
+    return 0; 
+}
+
 void copy_buf_to_pkt_simple(void *buf, unsigned len, struct rte_mbuf *pkt, unsigned offset)
 {
 
@@ -292,6 +359,7 @@ int send_received_dgram(proxy_ctx_t *ctx, uint8_t *ip_packet) {
     }
 }
 
+
 // proxy_ctx_t* proxy_create_ctx(proxy_struct_t *proxy_struct)
 // {
 //     proxy_ctx_t* ctx = (proxy_ctx_t*)malloc(sizeof(proxy_ctx_t));
@@ -329,7 +397,7 @@ int proxy_callback(picoquic_cnx_t* cnx,
         case picoquic_callback_prepare_datagram:
             //printf("callb\n");
 
-            rcv_encapsulate_send(cnx,ctx);
+            rcv_encapsulate_send2(cnx,ctx,bytes,length);
             break;
         case picoquic_callback_stateless_reset:
         case picoquic_callback_close: /* Received connection close */
