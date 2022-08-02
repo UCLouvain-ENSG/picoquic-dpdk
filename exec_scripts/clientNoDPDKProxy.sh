@@ -1,0 +1,2 @@
+#!/bin/bash
+sudo LD_LIBRARY_PATH=$LD_LIBRARY_PATH ./dpdk_picoquicdemo --dpdk -l 2-4 -a 0000:18:02.2 -a 0000:18:02.3 --proc-type=primary --file-prefix=rte_1 --socket-mem=2000 -- -! -A 52:9f:20:28:0b:c2 -2 fe:13:bc:b6:46:cd -a proxy localhost 4443 /10000000000

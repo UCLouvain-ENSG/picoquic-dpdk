@@ -267,6 +267,9 @@ int rcv_encapsulate_send2(picoquic_cnx_t* cnx,proxy_ctx_t * ctx, uint8_t* bytes,
                     rte_ring_dequeue_finish(ctx->rx_to_worker_ring, n);
                     
                 }
+                else{
+                    printf("MALLOC FAILED\n");
+                }
                 rte_pktmbuf_free(pkt[0]);
             }
             else{
