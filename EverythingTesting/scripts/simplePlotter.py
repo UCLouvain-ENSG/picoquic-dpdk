@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import re
+import numpy as np
 
 throughput_index = 6
 time_index = 4
@@ -55,7 +56,7 @@ def get_full_data_perf(file,index):
             elif unit == "Mbits":
                 data.append(float(tab[index]))
             else:
-                print("wrong unit")
+                print("wrong unit : " + unit)
     return data
 
 def get_full_data_UDP(file,index):
@@ -106,6 +107,50 @@ def comparison_plot_box(items,title,yLabel,outputFileName, xLabel = None, yTicks
     plt.cla()
     plt.clf()
     
+    
+    
+def set_box_color(bp, color):
+    plt.setp(bp['boxes'], color=color)
+    plt.setp(bp['whiskers'], color=color)
+    plt.setp(bp['caps'], color=color)
+    plt.setp(bp['medians'], color=color)
+    
+def comparison_plot_box_superpossed(items1,items2, title,yLabel,outputFileName, label1, label2, xLabel = None, yTicks = None):
+    
+    
+    data1 = [i.getData() for i in items1]
+    data2 = [i.getData() for i in items2]
+    
+    ticks = [str(i) for i in range(100,1300,100)]
+    
+    #starting here
+    plt.figure()
+    plt.grid(True)
+    if xLabel != None:
+        plt.xlabel(xLabel)
+    plt.ylabel(yLabel)
+    
+
+    bpl = plt.boxplot(data1, positions=np.array(range(len(data1)))*2.0-0.4, sym='', widths=0.6)
+    bpr = plt.boxplot(data2, positions=np.array(range(len(data2)))*2.0+0.4, sym='', widths=0.6)
+    set_box_color(bpl, '#D7191C')
+    set_box_color(bpr, '#2C7BB6')
+
+    plt.plot([], c='#D7191C', label=label1)
+    plt.plot([], c='#2C7BB6', label=label2)
+    plt.legend()
+
+    plt.xticks(range(0, len(ticks) * 2, 2), ticks)
+    plt.xlim(-2, len(ticks)*2)
+    # plt.ylim(0, 8)
+    plt.tight_layout()
+    plt.savefig(outputFileName,format = 'pdf')
+    plt.figure().clear()
+    plt.close()
+    plt.cla()
+    plt.clf()
+    
+
 def comparison_plot_bar_proxy():
     data = [800,1800,2400,5000,7000]
     labels = [100,300,500,700,1000]
@@ -119,6 +164,8 @@ def comparison_plot_bar_proxy():
     plt.close()
     plt.cla()
     plt.clf()
+    
+    
 
     
 def throughput_comparison_plot_bar():
@@ -394,6 +441,16 @@ def UDP_proxy_var_sizes_forwarder():
         items.append(ItemToPlot(size,get_full_data_UDP,("../data/proxy/noproxyUDP{}.txt".format(str(size)),2)))
     comparison_plot_box(items, " ", "Throughput (Mbps)","../plots/UDP_pl_size_cmp_forwarder.pdf","payload size")
     
+    
+def TCP_proxy_cmp_wireguard():
+    items1 = []
+    items2 = []
+    for size in range(100,1300,100):
+        items1.append(ItemToPlot("proxy",get_full_data_perf,("../data/proxy/proxyTCP{}.txt".format(str(size)),perf_tp_index)))
+        items2.append(ItemToPlot("wireguard",get_full_data_perf,("../data/proxy/wireguardTCP{}.txt".format(str(size)),perf_tp_index)))
+        
+    comparison_plot_box_superpossed(items1,items2, "" ,"Throughput (Mbps)","../plots/wireguardVsProxy.pdf", 'proxy','wiregard', xLabel = "payload size", yTicks = None)
+    
 #######PROXY######
 
 
@@ -443,8 +500,9 @@ if __name__ == "__main__":
     # TCP_proxy_var_sizes_proxy_nb_packets()
     # UDP_proxy_var_sizes_proxy_nb_packets()
     
-    request_comparison_plot()
-    throughput_comparison_plot_box()
-    handshake_time_comparison_plot_box()
+    # request_comparison_plot()
+    # throughput_comparison_plot_box()
+    # handshake_time_comparison_plot_box()
+    TCP_proxy_cmp_wireguard()
     
 
