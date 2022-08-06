@@ -679,8 +679,6 @@ def fast_test():
     ax.set_xticks( xlocations )
     ax.set_xticklabels( labels_list, rotation=0 )
 
-
-
     plt.show()
         
     
