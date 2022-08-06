@@ -1,3 +1,5 @@
+from ast import keyword
+from sqlite3 import converters
 import matplotlib.pyplot as plt
 import re
 import numpy as np
@@ -33,15 +35,19 @@ def take_average(file,index):
         counter +=1
     return(throughput/counter)
 
-def get_full_data(file,index):
+def identityFunction(x):
+    return x
+
+def get_full_data(file,index,keyword = ".*?",functionToApply = identityFunction):
+    print(file)
     file1 = open(file, 'r')
     data = []
-    while True:
-        line = file1.readline()
-        if not line:
-            break
-        tab = line.split(" ")
-        data.append(float(tab[index]))
+    for line in file1:
+        if re.search(keyword,line):
+                tab = line.split(" ")
+                data.append(float(functionToApply(tab[index])))
+            
+        
     return data
 
 def get_full_data_perf(file,index):
@@ -149,6 +155,91 @@ def comparison_plot_box_superpossed(items1,items2, title,yLabel,outputFileName, 
     plt.close()
     plt.cla()
     plt.clf()
+    
+def comparison_plot_box_n_superpossed(groups):
+    
+    
+    data_groups  = []
+    for group in groups:
+        data = []
+        for item in group:
+            data.append(item.getData())
+        data_groups.append(data)
+        
+    colors = ['red','green','blue','purple']
+
+    # we compare the performances of the 4 individuals within the same set of 3 settings 
+    
+    # --- Labels for your data:
+    labels_list = [str(i) for i in range(100,1300,100)]
+    width       = 1/len(labels_list)
+    xlocations  = [ x*((1+ len(data_groups))*width) for x in range(len(data_groups[0]))]
+    ymin        = min ( [ val  for dg in data_groups  for data in dg for val in data ] )
+    ymax        = max ( [ val  for dg in data_groups  for data in dg for val in data ])
+
+    ax = plt.gca()
+    ax.set_ylim(0,ymax+ymin)
+
+    ax.grid(True)
+    ax.set_axisbelow(True)
+    
+    
+
+    plt.xlabel('X axis label')
+    plt.ylabel('Y axis label')
+    plt.title('title')
+
+    space = len(data_groups)/2
+    offset = len(data_groups)/2
+
+
+    # --- Offset the positions per group:
+    
+    group_positions = []
+    color_counter = 0
+    for num, dg in enumerate(data_groups):    
+        _off = (0 - space + (0.5+num))
+        print(_off)
+        group_positions.append([x+_off*(width+0.01) for x in xlocations])
+    print(group_positions)
+    first_pos = group_positions[0][0]
+    last_post = group_positions[-1][-1]
+    margin = 0.2
+    plt.xlim(first_pos-margin, last_post+margin)
+    print(group_positions)
+    for dg, pos, c in zip(data_groups, group_positions, colors):
+        boxes = ax.boxplot(dg, 
+                    sym='',
+                    labels=['']*len(labels_list),
+        #           labels=labels_list,
+                    positions=pos, 
+                    widths=width, 
+                    # boxprops=dict(facecolor=c),
+        #             capprops=dict(color=c),
+        #            whiskerprops=dict(color=c),
+        #            flierprops=dict(color=c, markeredgecolor=c),                       
+                    # medianprops=dict(color='grey'),
+        #           notch=False,  
+        #           vert=True, 
+        #           whis=1.5,
+        #           bootstrap=None, 
+        #           usermedians=None, 
+        #           conf_intervals=None,
+                    #patch_artist=True,
+                    )
+        if(color_counter>=len(colors)):
+            print("Ran out of color!")
+            
+        set_box_color(boxes,colors[color_counter])
+        color_counter+=1
+        print(color_counter)
+    ax.set_xticks( xlocations )
+    ax.set_xticklabels( labels_list, rotation=0 )
+
+
+
+    plt.show()
+    
     
 
 def comparison_plot_bar_proxy():
@@ -442,14 +533,35 @@ def UDP_proxy_var_sizes_forwarder():
     comparison_plot_box(items, " ", "Throughput (Mbps)","../plots/UDP_pl_size_cmp_forwarder.pdf","payload size")
     
     
-def TCP_proxy_cmp_wireguard():
+def TCP_proxy_cmp_wireguard_TP():
     items1 = []
     items2 = []
     for size in range(100,1300,100):
         items1.append(ItemToPlot("proxy",get_full_data_perf,("../data/proxy/proxyTCP{}.txt".format(str(size)),perf_tp_index)))
         items2.append(ItemToPlot("wireguard",get_full_data_perf,("../data/proxy/wireguardTCP{}.txt".format(str(size)),perf_tp_index)))
         
-    comparison_plot_box_superpossed(items1,items2, "" ,"Throughput (Mbps)","../plots/wireguardVsProxy.pdf", 'proxy','wiregard', xLabel = "payload size", yTicks = None)
+    comparison_plot_box_superpossed(items1,items2, "" ,"Throughput (Mbps)","../plots/wireguardVsProxyTP.pdf", 'proxy','wiregard', xLabel = "payload size", yTicks = None)
+    
+def TCP_proxy_cmp_wireguard_PPS():
+    items1 = []
+    items2 = []
+    for size in range(100,1300,100):
+        items1.append(ItemToPlot("proxy",get_full_data_perf_nb_packets,("../data/proxy/proxyTCP{}.txt".format(str(size)),perf_tp_index,size)))
+        items2.append(ItemToPlot("wireguard",get_full_data_perf_nb_packets,("../data/proxy/wireguardTCP{}.txt".format(str(size)),perf_tp_index,size)))
+        
+    comparison_plot_box_superpossed(items1,items2, "" ,"Packets per second (PPS)","../plots/wireguardVsProxyPPS.pdf", 'proxy','wiregard', xLabel = "payload size", yTicks = None)
+    
+    
+def TCP_proxy_cmp_wireguard_PPS_test():
+    items1 = []
+    items2 = []
+    items3 = []
+    for size in range(100,1300,100):
+        items1.append(ItemToPlot("proxy",get_full_data_perf_nb_packets,("../data/proxy/proxyTCP{}.txt".format(str(size)),perf_tp_index,size)))
+        items2.append(ItemToPlot("wireguard1",get_full_data_perf_nb_packets,("../data/proxy/wireguardTCP{}.txt".format(str(size)),perf_tp_index,size)))
+        items3.append(ItemToPlot("wireguard",get_full_data_perf_nb_packets,("../data/proxy/wireguardTCP{}.txt".format(str(size)),perf_tp_index,size)))
+        
+    comparison_plot_box_n_superpossed([items1,items2,items3])
     
 #######PROXY######
 
@@ -458,6 +570,120 @@ def TCP_proxy_cmp_wireguard():
 
 ######implem cmp##########
 
+
+    
+def implems_cmp():
+    msquic_index = 4
+    quiche_index = 2
+    picotls_index = 6
+    items = []
+    items.append(ItemToPlot("picoquic",get_full_data,("../data/throughputBBR_nodpdk.txt",throughput_index)))
+    items.append(ItemToPlot("picoquic-dpdk",get_full_data,("../data/throughputBBR_dpdk.txt",throughput_index)))
+    
+    items.append(ItemToPlot("msquic", get_full_data,("../data/cmp/msquic.txt",msquic_index,"kbps",lambda a : float(a)/1000)))
+    items.append(ItemToPlot("quiche", get_full_data,("../data/cmp/quiche.txt",quiche_index,"Mbps")))
+    
+    f = lambda x : x[1:-8]
+    items.append(ItemToPlot("picotls", get_full_data,("../data/cmp/picotls.txt",picotls_index,"Mbps",f)))
+    
+    comparison_plot_box(items, " ", "Throughput (Mbps)","../plots/implem_cmp.pdf")
+    
+    
+    
+    
+    
+def fast_test():
+    d1_1 = [1,1,2,2,3,3]
+    d1_2 = [3,3,4,4,5,5]
+    d1_3 = [5,5,6,6,7,7]
+
+    # Individual 2
+    d2_1 = [7,7,8,8,9,9]
+    d2_2 = [9,9,10,10,11,11]
+    d2_3 = [11,11,12,12,13,13]
+
+    # Individual 3
+    d3_1 = [1,2,3,4,5,6]
+    d3_2 = [4,5,6,7,8,9]
+    d3_3 = [10,11,12,13,14,15]
+
+    # Individual 4
+    d4_1 = [1,1,2,2,3,3]
+    d4_2 = [9,9,10,10,11,11]
+    d4_3 = [10,11,12,13,14,15]
+
+
+    # --- Combining your data:
+    data_group1 = [d1_1, d1_2, d1_3]
+    data_group2 = [d2_1, d2_2, d2_3]
+    data_group3 = [d3_1, d3_2, d3_3]
+    data_group4 = [d4_1, d4_2, d4_3]
+
+    colors = ['pink', 'lightblue', 'lightgreen', 'violet']
+
+    # we compare the performances of the 4 individuals within the same set of 3 settings 
+    data_groups = [data_group1, data_group2, data_group3, data_group4]
+    print(data_groups)
+
+    # --- Labels for your data:
+    labels_list = ['a','b', 'c']
+    width       = 1/len(labels_list)
+    xlocations  = [ x*((1+ len(data_groups))*width) for x in range(len(data_group1)) ]
+
+    symbol      = 'r+'
+    ymin        = min ( [ val  for dg in data_groups  for data in dg for val in data ] )
+    ymax        = max ( [ val  for dg in data_groups  for data in dg for val in data ])
+
+    ax = plt.gca()
+    ax.set_ylim(ymin,ymax)
+
+    ax.grid(True, linestyle='dotted')
+    ax.set_axisbelow(True)
+
+    plt.xlabel('X axis label')
+    plt.ylabel('Y axis label')
+    plt.title('title')
+
+    space = len(data_groups)/2
+    offset = len(data_groups)/2
+    
+
+# --- Offset the positions per group:
+
+    group_positions = []
+    for num, dg in enumerate(data_groups):    
+        _off = (0 - space + (0.5+num))
+        print(_off)
+        group_positions.append([x+_off*(width+0.01) for x in xlocations])
+
+    for dg, pos, c in zip(data_groups, group_positions, colors):
+        boxes = ax.boxplot(dg, 
+                    sym=symbol,
+                    labels=['']*len(labels_list),
+        #            labels=labels_list,
+                    positions=pos, 
+                    widths=width, 
+                    boxprops=dict(facecolor=c),
+        #             capprops=dict(color=c),
+        #            whiskerprops=dict(color=c),
+        #            flierprops=dict(color=c, markeredgecolor=c),                       
+                    medianprops=dict(color='grey'),
+        #           notch=False,  
+        #           vert=True, 
+        #           whis=1.5,
+        #           bootstrap=None, 
+        #           usermedians=None, 
+        #           conf_intervals=None,
+                    patch_artist=True,
+                    )
+    ax.set_xticks( xlocations )
+    ax.set_xticklabels( labels_list, rotation=0 )
+
+
+
+    plt.show()
+        
+    
 
 ######implem cmp##########
 
@@ -503,6 +729,9 @@ if __name__ == "__main__":
     # request_comparison_plot()
     # throughput_comparison_plot_box()
     # handshake_time_comparison_plot_box()
-    TCP_proxy_cmp_wireguard()
+    #TCP_proxy_cmp_wireguard_PPS()
+    #implems_cmp()
+    TCP_proxy_cmp_wireguard_PPS_test()
+    #fast_test()
     
 
