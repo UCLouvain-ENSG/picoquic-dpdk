@@ -19,6 +19,7 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#define FASTPATCH 1
 #include "picosocks.h"
 #include "picoquic_utils.h"
 
@@ -1149,7 +1150,9 @@ int picoquic_select_ex(SOCKET_TYPE* sockets,
             tv.tv_usec = (long)(delta_t % 1000000);
         }
     }
-
+#if FASTPATCH == 1
+    memset(&tv,0,sizeof(struct timeval));
+#endif
     ret_select = select(sockmax + 1, &readfds, NULL, NULL, &tv);
 
     if (ret_select < 0) {
