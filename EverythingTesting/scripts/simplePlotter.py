@@ -96,7 +96,7 @@ def comparison_plot_bar(items,title,yLabel,outputFileName):
 def comparison_plot_box(items,title,yLabel,outputFileName, xLabel = None, yTicks = None):
     print(xLabel)
     data = [i.getData() for i in items]
-    labels = [i.label for i in items]
+    labels = [i.label() for i in items]
     fig, ax = plt.subplots()
     ax.boxplot(data,showfliers=False)
     ax.set_xticklabels(labels)
@@ -156,7 +156,7 @@ def comparison_plot_box_superpossed(items1,items2, title,yLabel,outputFileName, 
     plt.cla()
     plt.clf()
     
-def comparison_plot_box_n_superpossed(groups):
+def comparison_plot_box_n_superpossed(groups,ylabel,xlabel,xticksLabels,filename):
     
     
     data_groups  = []
@@ -167,7 +167,7 @@ def comparison_plot_box_n_superpossed(groups):
         data_groups.append(data)
         
     colors = ['red','green','blue','purple']
-
+    
     # we compare the performances of the 4 individuals within the same set of 3 settings 
     
     # --- Labels for your data:
@@ -185,10 +185,12 @@ def comparison_plot_box_n_superpossed(groups):
     
     
 
-    plt.xlabel('X axis label')
-    plt.ylabel('Y axis label')
-    plt.title('title')
-
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    
+    for i in range(len(xticksLabels)):
+        plt.plot([], c=colors[i], label=xticksLabels[i])
+    plt.legend()
     space = len(data_groups)/2
     offset = len(data_groups)/2
 
@@ -199,14 +201,13 @@ def comparison_plot_box_n_superpossed(groups):
     color_counter = 0
     for num, dg in enumerate(data_groups):    
         _off = (0 - space + (0.5+num))
-        print(_off)
+        
         group_positions.append([x+_off*(width+0.01) for x in xlocations])
-    print(group_positions)
     first_pos = group_positions[0][0]
     last_post = group_positions[-1][-1]
     margin = 0.2
     plt.xlim(first_pos-margin, last_post+margin)
-    print(group_positions)
+    
     for dg, pos, c in zip(data_groups, group_positions, colors):
         boxes = ax.boxplot(dg, 
                     sym='',
@@ -232,13 +233,15 @@ def comparison_plot_box_n_superpossed(groups):
             
         set_box_color(boxes,colors[color_counter])
         color_counter+=1
-        print(color_counter)
     ax.set_xticks( xlocations )
     ax.set_xticklabels( labels_list, rotation=0 )
 
 
-
-    plt.show()
+    plt.savefig(filename,format = 'pdf')
+    plt.figure().clear()
+    plt.close()
+    plt.cla()
+    plt.clf()
     
     
 
@@ -533,6 +536,25 @@ def UDP_proxy_var_sizes_forwarder():
     comparison_plot_box(items, " ", "Throughput (Mbps)","../plots/UDP_pl_size_cmp_forwarder.pdf","payload size")
     
     
+# def TCP_proxy_cmp_wireguard_TP():
+#     items1 = []
+#     items2 = []
+#     for size in range(100,1300,100):
+#         items1.append(ItemToPlot("proxy",get_full_data_perf,("../data/proxy/proxyTCP{}.txt".format(str(size)),perf_tp_index)))
+#         items2.append(ItemToPlot("wireguard",get_full_data_perf,("../data/proxy/wireguardTCP{}.txt".format(str(size)),perf_tp_index)))
+        
+#     comparison_plot_box_superpossed(items1,items2, "" ,"Throughput (Mbps)","../plots/wireguardVsProxyTP.pdf", 'proxy','wiregard', xLabel = "payload size", yTicks = None)
+    
+# def TCP_proxy_cmp_wireguard_PPS():
+#     items1 = []
+#     items2 = []
+#     for size in range(100,1300,100):
+#         items1.append(ItemToPlot("proxy",get_full_data_perf_nb_packets,("../data/proxy/proxyTCP{}.txt".format(str(size)),perf_tp_index,size)))
+#         items2.append(ItemToPlot("wireguard",get_full_data_perf_nb_packets,("../data/proxy/wireguardTCP{}.txt".format(str(size)),perf_tp_index,size)))
+        
+#     comparison_plot_box_superpossed(items1,items2, "" ,"Packets per second (PPS)","../plots/wireguardVsProxyPPS.pdf", 'proxy','wiregard', xLabel = "payload size", yTicks = None)
+    
+    
 def TCP_proxy_cmp_wireguard_TP():
     items1 = []
     items2 = []
@@ -540,8 +562,8 @@ def TCP_proxy_cmp_wireguard_TP():
         items1.append(ItemToPlot("proxy",get_full_data_perf,("../data/proxy/proxyTCP{}.txt".format(str(size)),perf_tp_index)))
         items2.append(ItemToPlot("wireguard",get_full_data_perf,("../data/proxy/wireguardTCP{}.txt".format(str(size)),perf_tp_index)))
         
-    comparison_plot_box_superpossed(items1,items2, "" ,"Throughput (Mbps)","../plots/wireguardVsProxyTP.pdf", 'proxy','wiregard', xLabel = "payload size", yTicks = None)
-    
+    comparison_plot_box_n_superpossed([items1,items2],'Goodput (Mbps)','payload size (bytes)',['proxy','wireguard'],"../plots/wireguardVsProxyTP.pdf")
+
 def TCP_proxy_cmp_wireguard_PPS():
     items1 = []
     items2 = []
@@ -549,19 +571,7 @@ def TCP_proxy_cmp_wireguard_PPS():
         items1.append(ItemToPlot("proxy",get_full_data_perf_nb_packets,("../data/proxy/proxyTCP{}.txt".format(str(size)),perf_tp_index,size)))
         items2.append(ItemToPlot("wireguard",get_full_data_perf_nb_packets,("../data/proxy/wireguardTCP{}.txt".format(str(size)),perf_tp_index,size)))
         
-    comparison_plot_box_superpossed(items1,items2, "" ,"Packets per second (PPS)","../plots/wireguardVsProxyPPS.pdf", 'proxy','wiregard', xLabel = "payload size", yTicks = None)
-    
-    
-def TCP_proxy_cmp_wireguard_PPS_test():
-    items1 = []
-    items2 = []
-    items3 = []
-    for size in range(100,1300,100):
-        items1.append(ItemToPlot("proxy",get_full_data_perf_nb_packets,("../data/proxy/proxyTCP{}.txt".format(str(size)),perf_tp_index,size)))
-        items2.append(ItemToPlot("wireguard1",get_full_data_perf_nb_packets,("../data/proxy/wireguardTCP{}.txt".format(str(size)),perf_tp_index,size)))
-        items3.append(ItemToPlot("wireguard",get_full_data_perf_nb_packets,("../data/proxy/wireguardTCP{}.txt".format(str(size)),perf_tp_index,size)))
-        
-    comparison_plot_box_n_superpossed([items1,items2,items3])
+    comparison_plot_box_n_superpossed([items1,items2],'Packet per second','payload size (bytes)',['proxy','wireguard'],"../plots/wireguardVsProxyPPS.pdf")
     
 #######PROXY######
 
@@ -591,97 +601,7 @@ def implems_cmp():
     
     
     
-    
-def fast_test():
-    d1_1 = [1,1,2,2,3,3]
-    d1_2 = [3,3,4,4,5,5]
-    d1_3 = [5,5,6,6,7,7]
 
-    # Individual 2
-    d2_1 = [7,7,8,8,9,9]
-    d2_2 = [9,9,10,10,11,11]
-    d2_3 = [11,11,12,12,13,13]
-
-    # Individual 3
-    d3_1 = [1,2,3,4,5,6]
-    d3_2 = [4,5,6,7,8,9]
-    d3_3 = [10,11,12,13,14,15]
-
-    # Individual 4
-    d4_1 = [1,1,2,2,3,3]
-    d4_2 = [9,9,10,10,11,11]
-    d4_3 = [10,11,12,13,14,15]
-
-
-    # --- Combining your data:
-    data_group1 = [d1_1, d1_2, d1_3]
-    data_group2 = [d2_1, d2_2, d2_3]
-    data_group3 = [d3_1, d3_2, d3_3]
-    data_group4 = [d4_1, d4_2, d4_3]
-
-    colors = ['pink', 'lightblue', 'lightgreen', 'violet']
-
-    # we compare the performances of the 4 individuals within the same set of 3 settings 
-    data_groups = [data_group1, data_group2, data_group3, data_group4]
-    print(data_groups)
-
-    # --- Labels for your data:
-    labels_list = ['a','b', 'c']
-    width       = 1/len(labels_list)
-    xlocations  = [ x*((1+ len(data_groups))*width) for x in range(len(data_group1)) ]
-
-    symbol      = 'r+'
-    ymin        = min ( [ val  for dg in data_groups  for data in dg for val in data ] )
-    ymax        = max ( [ val  for dg in data_groups  for data in dg for val in data ])
-
-    ax = plt.gca()
-    ax.set_ylim(ymin,ymax)
-
-    ax.grid(True, linestyle='dotted')
-    ax.set_axisbelow(True)
-
-    plt.xlabel('X axis label')
-    plt.ylabel('Y axis label')
-    plt.title('title')
-
-    space = len(data_groups)/2
-    offset = len(data_groups)/2
-    
-
-# --- Offset the positions per group:
-
-    group_positions = []
-    for num, dg in enumerate(data_groups):    
-        _off = (0 - space + (0.5+num))
-        print(_off)
-        group_positions.append([x+_off*(width+0.01) for x in xlocations])
-
-    for dg, pos, c in zip(data_groups, group_positions, colors):
-        boxes = ax.boxplot(dg, 
-                    sym=symbol,
-                    labels=['']*len(labels_list),
-        #            labels=labels_list,
-                    positions=pos, 
-                    widths=width, 
-                    boxprops=dict(facecolor=c),
-        #             capprops=dict(color=c),
-        #            whiskerprops=dict(color=c),
-        #            flierprops=dict(color=c, markeredgecolor=c),                       
-                    medianprops=dict(color='grey'),
-        #           notch=False,  
-        #           vert=True, 
-        #           whis=1.5,
-        #           bootstrap=None, 
-        #           usermedians=None, 
-        #           conf_intervals=None,
-                    patch_artist=True,
-                    )
-    ax.set_xticks( xlocations )
-    ax.set_xticklabels( labels_list, rotation=0 )
-
-    plt.show()
-        
-    
 
 ######implem cmp##########
 
@@ -729,7 +649,8 @@ if __name__ == "__main__":
     # handshake_time_comparison_plot_box()
     #TCP_proxy_cmp_wireguard_PPS()
     #implems_cmp()
-    TCP_proxy_cmp_wireguard_PPS_test()
+    TCP_proxy_cmp_wireguard_TP()
+    TCP_proxy_cmp_wireguard_PPS()
     #fast_test()
     
 

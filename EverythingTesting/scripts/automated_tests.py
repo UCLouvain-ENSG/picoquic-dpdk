@@ -2,6 +2,7 @@
 
 from http import client
 from subprocess import Popen, PIPE
+import subprocess
 
 import json
 import shlex
@@ -66,6 +67,11 @@ def run_command(command,host,directory):
     print(cmds)
     return Popen(cmds, stdout=None, stderr=None, stdin=None)
     
+def run_command_read_STDOUT(command,host,directory):
+    cmds = ['ssh', host,'cd {}; {}'.format(directory,command)]
+    print(cmds)
+    return Popen(cmds, stdout=subprocess.PIPE, stderr=None, stdin=None)
+
 def run_client(args):
     cmds = ['ssh', clientName,'python3','/home/nikita/memoire/dpdk_picoquic/EverythingTesting/scripts/client_for_tests.py',dic_to_json(args)]
     return Popen(cmds, stdout=None, stderr=None, stdin=None)
@@ -510,25 +516,69 @@ def proxy_TCP_testing():
     #         clean_everything();
     #         time.sleep(3);
             
-            
-def proxy_UDP_testing():
-    #dpdk proxy
-    # server = run_command("sh network_scripts/proxy_setup_server.sh",serverName,dpdk_picoquic_directory)
-    # server.wait()
-    server = run_command("sudo ip -all netns delete  ",serverName,dpdk_picoquic_directory)
+           
+def proxy_TCP_noDPDK():
+    server = run_command("sh network_scripts/proxy_setup_server.sh",serverName,dpdk_picoquic_directory)
     server.wait()
     for i in range(5):
-        for size in range(100,1300,100):        
+        for size in range(100,1300,100):
             clientP1 = run_command("sh exec_scripts/serverProxy.sh >> /dev/null",clientName,dpdk_picoquic_directory)
             time.sleep(3)
             clientP2 = run_command("sh exec_scripts/clientProxy.sh >> /dev/null",clientName,dpdk_picoquic_directory)
             time.sleep(3)
-            serverP2 = run_command("sh exec_scripts/proxy2.sh >> EverythingTesting/data/proxy/proxyUDP{}.txt".format(str(size)),serverName,dpdk_picoquic_directory)
+            serverP2 = run_command(nss + " iperf3 -s >> /dev/null",serverName,dpdk_picoquic_directory)
             time.sleep(3)
-            serverP1 = run_command("sh exec_scripts/proxy1.sh {} 1 >> /dev/null".format(str(size)),serverName,dpdk_picoquic_directory)
-            serverP2.wait()
+            serverP1 = run_command(nsc + " iperf3 -M {} -c 10.10.0.2 -t 30 >> EverythingTesting/data/proxy/proxyTCP{}.txt".format(str(size),str(size)),serverName,dpdk_picoquic_directory)
+            serverP1.wait()
             clean_everything();
             time.sleep(3);
+     
+def proxy_UDP_testing():
+    #dpdk proxy
+    # # server.wait()
+    cmd1 = run_command("sudo ip -all netns delete  ",serverName,dpdk_picoquic_directory)
+    cmd1.wait()
+
+    cmd2 = run_command("sh network_scripts/proxy_setup_server.sh",serverName,dpdk_picoquic_directory)
+    cmd2.wait()
+    
+   
+    
+    for i in range(5):
+        killer = run_command("sh killiperf3.sh >> /dev/null",serverName,dpdk_picoquic_directory)
+        killer.wait()
+        cmd1 = nss + " iperf3 -s -p 5000 -f m >> /dev/null"
+        cmd2 = nss + " iperf3 -s -p 5001 -f m >> /dev/null"
+        cmd = "{} & {}".format(cmd1,cmd2)
+        Server = run_command(cmd,serverName,dpdk_picoquic_directory)
+        time.sleep(5)
+        for size in range(100,1300,100):
+            my_range = []
+            if size == 100:
+                my_range = range(int(10*size),size*20,int(size))
+            elif size<700:
+                my_range = range(int(3*size),size*15,int(size/2))
+            else:
+                my_range = range(int(2*size),size*7,int(size/2))
+            for b in my_range:
+                formater1 = run_command("echo -n {} Mbps iteration : {} >> EverythingTesting/data/proxy/proxyUDP_{}1.txt".format(b,size,i),clientName,dpdk_picoquic_directory)
+                formater2 = run_command("echo -n {} Mbps >> EverythingTesting/data/proxy/proxyUDP_{}2.txt ".format(b,size),clientName,dpdk_picoquic_directory)
+                formater1.wait()
+                formater2.wait()
+                clientP1 = run_command("sh exec_scripts/serverProxy.sh >> /dev/null",clientName,dpdk_picoquic_directory)
+                time.sleep(5)
+                clientP2 = run_command("sh exec_scripts/clientProxy.sh >> /dev/null",clientName,dpdk_picoquic_directory)
+                time.sleep(5)
+                cmd1 = nsc + " iperf3 -c 10.10.0.2 --cport 5500 -p 5000 -l 1200 -u -b {}M -t 10 -f m | grep 'receiver' >> EverythingTesting/data/proxy/proxyUDP_{}1.txt".format(b,size)
+                cmd2 = nsc + " iperf3 -c 10.10.0.2 --cport 5600 -p 5001 -l 1200 -u -b {}M -t 10 -f m | grep 'receiver' >> EverythingTesting/data/proxy/proxyUDP_{}2.txt".format(b,size)
+                cmd = "{} & {}".format(cmd1,cmd2)
+                Cli = run_command(cmd,serverName,dpdk_picoquic_directory)
+                Cli.wait()
+                time.sleep(2)
+                killer1 = run_command("sh killDpdkProcess.sh >> /dev/null",clientName,dpdk_picoquic_directory)
+                killer1.wait()
+    killer2 = run_command("sh killiperf3.sh >> /dev/null",serverName,dpdk_picoquic_directory)
+    killer2.wait()
     #forwarder    
     # for i in range(5):
     #     for size in range(100,1300,100):        
@@ -549,9 +599,9 @@ def proxy_UDP_testing():
 def wireguard_testing():
     for i in range(5):
         for size in range(100,1300,100):
-            server = run_command("iperf3 -s -p 50770 >> /dev/null",serverName,dpdk_picoquic_directory)
+            server = run_command(nss + " iperf3 -s >> /dev/null",serverName,dpdk_picoquic_directory)
             time.sleep(5)
-            client = run_command("iperf3 -M {} -c 9.0.0.2 -p 50770 -t 30 >> EverythingTesting/data/proxy/wireguardTCP{}.txt".format(str(size),str(size)),clientName,dpdk_picoquic_directory)
+            client = run_command(nsc + " iperf3 -M {} -c 2.0.0.1 -t 30 >> EverythingTesting/data/proxy/wireguardTCP{}.txt".format(str(size),str(size)),serverName,dpdk_picoquic_directory)
             client.wait()
             clean_everything();
             time.sleep(3)
@@ -567,7 +617,7 @@ def picotls_test():
     for i in range(5):
         server = run_command("sudo sh server.sh &>> {}/EverythingTesting/data/cmp/picotls.txt".format(dpdk_picoquic_directory),serverName,picotls_directory)
         time.sleep(3)
-        client = run_command("sudo sh client.sh".format(dpdk_picoquic_directory),clientName,picotls_directory)
+        client = run_command("sudo sh client.sh",clientName,picotls_directory)
         time.sleep(30)
         killer1 = run_command("sudo kill $(pidof cli)",clientName,dpdk_picoquic_directory)
         killer1.wait()
@@ -622,7 +672,7 @@ if __name__ == "__main__":
     #test_throughput20()
     #test_batching_fixed_RX64()
     #proxy_UDP_testing()
-    proxy_UDP_testing()
+    #proxy_UDP_testing()
         
         
     #picotls_test()
@@ -630,6 +680,7 @@ if __name__ == "__main__":
     #msquic_test()
     
     #wireguard_testing()
+    proxy_UDP_testing()
         
     
 

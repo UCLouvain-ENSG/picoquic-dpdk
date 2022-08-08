@@ -1,0 +1,10 @@
+1800 Mbps[  5]   0.00-8.00   sec  1.68 GBytes  1800 Mbits/sec  0.002 ms  0/1499925 (0%)  receiver
+2250 Mbps[  5]   0.00-8.00   sec  2.10 GBytes  2250 Mbits/sec  0.001 ms  0/1874874 (0%)  receiver
+2700 Mbps[  5]   0.00-8.00   sec  2.50 GBytes  2686 Mbits/sec  0.004 ms  11567/2249993 (0.51%)  receiver
+3150 Mbps[  5]   0.00-8.00   sec  2.93 GBytes  3145 Mbits/sec  0.001 ms  4160/2624991 (0.16%)  receiver
+3600 Mbps[  5]   0.00-8.00   sec  2.84 GBytes  3049 Mbits/sec  0.002 ms  6954/2548187 (0.27%)  receiver
+4050 Mbps[  5]   0.00-8.00   sec  3.53 GBytes  3788 Mbits/sec  0.001 ms  217868/3374817 (6.5%)  receiver
+4500 Mbps[  5]   0.00-8.00   sec  3.90 GBytes  4191 Mbits/sec  0.001 ms  191436/3684439 (5.2%)  receiver
+4950 Mbps[  5]   0.00-8.00   sec  3.83 GBytes  4111 Mbits/sec  0.000 ms  225602/3651301 (6.2%)  receiver
+5400 Mbps[  5]   0.00-8.00   sec  4.11 GBytes  4413 Mbits/sec  0.001 ms  4528/3682401 (0.12%)  receiver
+5850 Mbps[  5]   0.00-8.00   sec  2.66 GBytes  2855 Mbits/sec  0.002 ms  83451/2462758 (3.4%)  receiver
