@@ -487,34 +487,58 @@ def clean_everything():
     
 def proxy_TCP_testing():
     #dpdk proxy
-    server = run_command("sh network_scripts/proxy_setup_server.sh",serverName,dpdk_picoquic_directory)
+    def mykiller():
+        p1a = run_command("sh killDpdkProcess.sh >> /dev/null",clientName,dpdk_picoquic_directory)
+        p1b = run_command("sh killDpdkProcess.sh >> /dev/null",serverName,dpdk_picoquic_directory)
+        p2a = run_command("sh killiperf3.sh >> /dev/null",clientName,dpdk_picoquic_directory)
+        p2b = run_command("sh killiperf3.sh >> /dev/null",serverName,dpdk_picoquic_directory)
+        p3a = run_command("sh killForwarder.sh >> /dev/null",clientName,dpdk_picoquic_directory)
+        p3b = run_command("sh killForwarder.sh >> /dev/null",serverName,dpdk_picoquic_directory)
+        for p in [p1a,p1b,p2a,p2b,p3a,p3b]:
+            p.wait()
+        
+    server = run_command("sh network_scripts/proxy_setup_server_Z.sh",serverName,dpdk_picoquic_directory)
     server.wait()
-    for i in range(5):
-        for size in range(100,1300,100):
-            clientP1 = run_command("sh exec_scripts/serverProxy.sh >> /dev/null",clientName,dpdk_picoquic_directory)
-            time.sleep(3)
-            clientP2 = run_command("sh exec_scripts/clientProxy.sh >> /dev/null",clientName,dpdk_picoquic_directory)
-            time.sleep(3)
-            serverP2 = run_command(nss + " iperf3 -s >> /dev/null",serverName,dpdk_picoquic_directory)
-            time.sleep(3)
-            serverP1 = run_command(nsc + " iperf3 -M {} -c 10.10.0.2 -t 30 >> EverythingTesting/data/proxy/proxyTCP{}.txt".format(str(size),str(size)),serverName,dpdk_picoquic_directory)
-            serverP1.wait()
-            clean_everything();
-            time.sleep(3);
-    #forwarder
-    # server.wait()        
+    client = run_command("sh network_scripts/proxy_setup_client_Z.sh",clientName,dpdk_picoquic_directory)
+    client.wait()
     # for i in range(5):
-    #     for size in range(100,1300,100):        
-    #         clientP1 = run_command("sh exec_scripts/dpdk_relay2.sh >> /dev/null",clientName,dpdk_picoquic_directory)
+    #     for size in range(100,1300,100):
+    #         serverP1 = run_command("sh exec_scripts/serverProxy.sh >> /dev/null",serverName,dpdk_picoquic_directory)
     #         time.sleep(3)
-    #         clientP2 = run_command("sh exec_scripts/dpdk_relay1.sh >> /dev/null",clientName,dpdk_picoquic_directory)
+    #         clientP1 = run_command("sh exec_scripts/clientProxy.sh >> /dev/null",clientName,dpdk_picoquic_directory)
     #         time.sleep(3)
-    #         serverP2 = run_command(nss + " iperf3 -s >> /dev/null",serverName,dpdk_picoquic_directory)
+    #         serverP2 = run_command(nss + " iperf3 -s >> /dev/null",clientName,dpdk_picoquic_directory)
     #         time.sleep(3)
-    #         serverP1 = run_command(nsc + " iperf3 -M {} -c 10.10.0.2 -t 30 >> EverythingTesting/data/proxy/noproxyTCP{}.txt".format(str(size),str(size)),serverName,dpdk_picoquic_directory)
-    #         serverP1.wait()
-    #         clean_everything();
+    #         clientP2 = run_command(nsc + " iperf3 -M {} -c 3.0.0.1 -t 30 >> EverythingTesting/data/proxy/proxyTCP{}.txt".format(str(size),str(size)),serverName,dpdk_picoquic_directory)
+    #         clientP2.wait()
+    #         mykiller();
     #         time.sleep(3);
+            
+    # for i in range(5):
+    #     for size in range(100,1300,100):
+    #         serverP1 = run_command("sh exec_scripts/serverNoDPDKProxy.sh >> /dev/null",serverName,dpdk_picoquic_directory)
+    #         time.sleep(3)
+    #         clientP1 = run_command("sh exec_scripts/clientNoDPDKProxy.sh >> /dev/null",clientName,dpdk_picoquic_directory)
+    #         time.sleep(3)
+    #         serverP2 = run_command(nss + " iperf3 -s >> /dev/null",clientName,dpdk_picoquic_directory)
+    #         time.sleep(3)
+    #         clientP2 = run_command(nsc + " iperf3 -M {} -c 3.0.0.1 -t 30 >> EverythingTesting/data/proxy/proxyTCPNoDPDK{}.txt".format(str(size),str(size)),serverName,dpdk_picoquic_directory)
+    #         clientP2.wait()
+    #         mykiller();
+    #         time.sleep(3);
+       
+    for i in range(5):
+        for size in range(100,1300,100):        
+            serverP1 = run_command("sh exec_scripts/dpdk_relay2.sh >> /dev/null",serverName,dpdk_picoquic_directory)
+            time.sleep(3)
+            clientP1 = run_command("sh exec_scripts/dpdk_relay1.sh >> /dev/null",clientName,dpdk_picoquic_directory)
+            time.sleep(3)
+            serverP2 = run_command(nss + " iperf3 -s >> /dev/null",clientName,dpdk_picoquic_directory)
+            time.sleep(3)
+            clientP2 = run_command(nsc + " iperf3 -M {} -c 3.0.0.1 -t 30 >> EverythingTesting/data/proxy/noproxyTCP{}.txt".format(str(size),str(size)),serverName,dpdk_picoquic_directory)
+            clientP2.wait()
+            mykiller();
+            time.sleep(3);
             
            
 def proxy_TCP_noDPDK():
@@ -597,11 +621,18 @@ def proxy_UDP_testing():
             
             
 def wireguard_testing():
+    cmd1 = run_command("sudo ip -all netns delete  ",serverName,dpdk_picoquic_directory)
+    cmd1.wait()
+    cmd2 = run_command("sh network_scripts/wireguard_server_setup.sh",serverName,dpdk_picoquic_directory)
+    cmd2.wait()
+    cmd3 = run_command("sh network_scripts/wireguard_client_setup.sh",clientName,dpdk_picoquic_directory)
+    cmd3.wait()
+
     for i in range(5):
         for size in range(100,1300,100):
-            server = run_command(nss + " iperf3 -s >> /dev/null",serverName,dpdk_picoquic_directory)
+            server = run_command(nss + " iperf3 -s >> /dev/null",clientName,dpdk_picoquic_directory)
             time.sleep(5)
-            client = run_command(nsc + " iperf3 -M {} -c 2.0.0.1 -t 30 >> EverythingTesting/data/proxy/wireguardTCP{}.txt".format(str(size),str(size)),serverName,dpdk_picoquic_directory)
+            client = run_command(nsc + " iperf3 -M {} -c 3.0.0.1 -t 30 >> EverythingTesting/data/proxy/wireguardTCP{}.txt".format(str(size),str(size)),serverName,dpdk_picoquic_directory)
             client.wait()
             clean_everything();
             time.sleep(3)
@@ -680,7 +711,8 @@ if __name__ == "__main__":
     #msquic_test()
     
     #wireguard_testing()
-    proxy_UDP_testing()
+    #proxy_UDP_testing()
+    proxy_TCP_testing()
         
     
 
