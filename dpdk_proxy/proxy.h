@@ -27,7 +27,7 @@ typedef struct st_proxy_ctx_t {
     struct rte_ether_addr *client_addr;
     struct sockaddr_in *client_ip;
     struct rte_ring *rx_to_worker_ring;
-    uint64_t counter;
+    uint32_t counter;
 } proxy_ctx_t;
 
 int proxy_callback(picoquic_cnx_t* cnx,

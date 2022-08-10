@@ -1,0 +1,2 @@
+final goodput : 3798.410150
+final goodput : 8368.506606

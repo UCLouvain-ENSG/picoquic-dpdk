@@ -46,6 +46,7 @@ def get_full_data(file,index,keyword = ".*?",functionToApply = identityFunction)
         if re.search(keyword,line):
                 tab = line.split(" ")
                 data.append(float(functionToApply(tab[index])))
+
             
         
     return data
@@ -96,12 +97,13 @@ def comparison_plot_bar(items,title,yLabel,outputFileName):
 def comparison_plot_box(items,title,yLabel,outputFileName, xLabel = None, yTicks = None):
     print(xLabel)
     data = [i.getData() for i in items]
-    labels = [i.label() for i in items]
+    labels = [i.label for i in items]
     fig, ax = plt.subplots()
     ax.boxplot(data,showfliers=False)
     ax.set_xticklabels(labels)
     ax.set_title(title)
     ax.set_ylabel(yLabel)
+    ax.set_ylim(bottom=0)
     if xLabel != None:
         ax.set_xlabel(xLabel)
     if yTicks != None:
@@ -165,7 +167,7 @@ def comparison_plot_box_n_superpossed(groups,ylabel,xlabel,xticksLabels,filename
         for item in group:
             data.append(item.getData())
         data_groups.append(data)
-        
+    print(data_groups)
     colors = ['red','green','blue','purple']
     
     # we compare the performances of the 4 individuals within the same set of 3 settings 
@@ -273,6 +275,11 @@ def throughput_comparison_plot_box():
     item1 = ItemToPlot("picoquic",get_full_data,("../data/throughputBBR_nodpdk.txt",throughput_index))
     item2 = ItemToPlot("picoquic-dpdk",get_full_data,("../data/throughputBBR_dpdk.txt",throughput_index))
     comparison_plot_box([item1,item2],"","Throughput(Mbps)","../plots/Throughput_box.pdf")
+    
+def throughput_comparison_plot_box_patched():
+    item1 = ItemToPlot("picoquic",get_full_data,("../data/throughputBBR_nodpdk.txt",throughput_index))
+    item2 = ItemToPlot("picoquic_patched",get_full_data,("../data/throughputBBRPatched_nodpdk.txt",throughput_index))
+    comparison_plot_box([item1,item2],"","Throughput(Mbps)","../plots/Throughput_boxPatched.pdf")
     
     
 def handshake_time_comparison_plot_box():
@@ -545,33 +552,60 @@ def UDP_proxy_var_sizes_forwarder():
         
 #     comparison_plot_box_superpossed(items1,items2, "" ,"Throughput (Mbps)","../plots/wireguardVsProxyTP.pdf", 'proxy','wiregard', xLabel = "payload size", yTicks = None)
     
-# def TCP_proxy_cmp_wireguard_PPS():
-#     items1 = []
-#     items2 = []
-#     for size in range(100,1300,100):
-#         items1.append(ItemToPlot("proxy",get_full_data_perf_nb_packets,("../data/proxy/proxyTCP{}.txt".format(str(size)),perf_tp_index,size)))
-#         items2.append(ItemToPlot("wireguard",get_full_data_perf_nb_packets,("../data/proxy/wireguardTCP{}.txt".format(str(size)),perf_tp_index,size)))
-        
-#     comparison_plot_box_superpossed(items1,items2, "" ,"Packets per second (PPS)","../plots/wireguardVsProxyPPS.pdf", 'proxy','wiregard', xLabel = "payload size", yTicks = None)
-    
-    
-def TCP_proxy_cmp_wireguard_TP():
+def prox_TCP_UDP_TP():
     items1 = []
     items2 = []
     for size in range(100,1300,100):
-        items1.append(ItemToPlot("proxy",get_full_data_perf,("../data/proxy/proxyTCP{}.txt".format(str(size)),perf_tp_index)))
-        items2.append(ItemToPlot("wireguard",get_full_data_perf,("../data/proxy/wireguardTCP{}.txt".format(str(size)),perf_tp_index)))
         
-    comparison_plot_box_n_superpossed([items1,items2],'Goodput (Mbps)','payload size (bytes)',['proxy','wireguard'],"../plots/wireguardVsProxyTP.pdf")
+        items1.append(ItemToPlot("TCP",get_full_data_perf,("../data/proxy/proxyTCP{}.txt".format(str(size)),perf_tp_index)))
+        items2.append(ItemToPlot("UDP",get_full_data,("../data/proxy/proxyUDP{}.txt".format(str(size)),3,"final")))
+        
+    comparison_plot_box_n_superpossed([items1,items2],'Goodput (Mbps)','payload size (bytes)',['TCP','UDP'],"../plots/TCPvsUDP_TP.pdf")
+
+
+def prox_TCP_vs_forwarder_TP():
+    items1 = []
+    items2 = []
+    for size in range(100,1300,100):
+        
+        items1.append(ItemToPlot("proxy",get_full_data_perf,("../data/proxy/proxyTCP{}.txt".format(str(size)),perf_tp_index)))
+        items2.append(ItemToPlot("forwarder",get_full_data_perf,("../data/proxy/noproxyTCP{}.txt".format(str(size)),perf_tp_index)))
+        
+    comparison_plot_box_n_superpossed([items1,items2],'Goodput (Mbps)','payload size (bytes)',['relay','forwarder'],"../plots/proxy_vs_forwarder_TP.pdf")
+
+def prox_TCP_UDP_PPS():
+    items1 = []
+    items2 = []
+    for size in range(100,1300,100):
+        
+        extractor = lambda x : float(x)*1000000/8/size
+        
+        items1.append(ItemToPlot("TCP",get_full_data_perf_nb_packets,("../data/proxy/proxyTCP{}.txt".format(str(size)),perf_tp_index,size)))
+        items2.append(ItemToPlot("UDP",get_full_data,("../data/proxy/proxyUDP{}.txt".format(str(size)),3,"final",extractor)))
+        
+    comparison_plot_box_n_superpossed([items1,items2],'Packet per second','payload size (bytes)',['TCP','UDP'],"../plots/TCPvsUDP_PPS.pdf")
+   
+def TCP_proxy_cmp_wireguard_TP():
+    items1 = []
+    items2 = []
+    items3 = []
+    for size in range(100,1300,100):
+        items1.append(ItemToPlot("picoquic",get_full_data_perf,("../data/proxy/proxyTCPNoDPDK{}.txt".format(str(size)),perf_tp_index)))
+        items2.append(ItemToPlot("picoquic-dpdk",get_full_data_perf,("../data/proxy/proxyTCP{}.txt".format(str(size)),perf_tp_index)))
+        items3.append(ItemToPlot("wireguard",get_full_data_perf,("../data/proxy/wireguardTCP{}.txt".format(str(size)),perf_tp_index)))
+        
+    comparison_plot_box_n_superpossed([items1,items2,items3],'Goodput (Mbps)','payload size (bytes)',['picoquic','picoquic-dpdk','wireguard'],"../plots/wireguardVsProxyTP.pdf")
 
 def TCP_proxy_cmp_wireguard_PPS():
     items1 = []
     items2 = []
+    items3 = []
     for size in range(100,1300,100):
-        items1.append(ItemToPlot("proxy",get_full_data_perf_nb_packets,("../data/proxy/proxyTCP{}.txt".format(str(size)),perf_tp_index,size)))
-        items2.append(ItemToPlot("wireguard",get_full_data_perf_nb_packets,("../data/proxy/wireguardTCP{}.txt".format(str(size)),perf_tp_index,size)))
+        items1.append(ItemToPlot("picoquic",get_full_data_perf_nb_packets,("../data/proxy/proxyTCPNoDPDK{}.txt".format(str(size)),perf_tp_index,size)))
+        items2.append(ItemToPlot("picoquic-dpdk",get_full_data_perf_nb_packets,("../data/proxy/proxyTCP{}.txt".format(str(size)),perf_tp_index,size)))
+        items3.append(ItemToPlot("wireguard",get_full_data_perf_nb_packets,("../data/proxy/wireguardTCP{}.txt".format(str(size)),perf_tp_index,size)))
         
-    comparison_plot_box_n_superpossed([items1,items2],'Packet per second','payload size (bytes)',['proxy','wireguard'],"../plots/wireguardVsProxyPPS.pdf")
+    comparison_plot_box_n_superpossed([items1,items2,items3],'Packet per second','payload size (bytes)',['picoquic','picoquic-dpdk','wireguard'],"../plots/wireguardVsProxyPPS.pdf")
     
 #######PROXY######
 
@@ -649,8 +683,13 @@ if __name__ == "__main__":
     # handshake_time_comparison_plot_box()
     #TCP_proxy_cmp_wireguard_PPS()
     #implems_cmp()
-    TCP_proxy_cmp_wireguard_TP()
-    TCP_proxy_cmp_wireguard_PPS()
-    #fast_test()
     
-
+    #fast_test()
+    #throughput_comparison_plot_box_patched()
+    #implems_cmp()
+    
+    #TCP_proxy_cmp_wireguard_TP()
+    #TCP_proxy_cmp_wireguard_PPS()
+    # prox_TCP_UDP_TP()
+    # prox_TCP_UDP_PPS()
+    prox_TCP_vs_forwarder_TP()

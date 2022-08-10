@@ -125,6 +125,7 @@ lcore_hello(__rte_unused void *arg)
 
     printf("mac : %s\n",macStr);
 	int packet_counter = 0;
+	uint64_t max_goodput = 0;
 	uint64_t global_packet_counter = 0;
 	uint64_t goodput = 0;
 	uint64_t previous_goodput = 0;
@@ -132,7 +133,8 @@ lcore_hello(__rte_unused void *arg)
     struct timeval current_time;
 	int empty_cycle_counter = 0;
 	gettimeofday(&start_time, NULL);
-	unsigned expected_seqnum = 0;
+	uint32_t expected_seqnum = 0;
+	int decreased_counter = 0;
 	while (true)
 	{
 		ret = rte_eth_rx_burst(0, 0, pkts_burst, MAX_PKT_BURST);
@@ -149,7 +151,7 @@ lcore_hello(__rte_unused void *arg)
 				struct rte_udp_hdr *udp_hdr = (struct rte_udp_hdr *)((unsigned char *)ip_hdr +
 																sizeof(struct rte_ipv4_hdr));
 				unsigned char *payload = (unsigned char *)(udp_hdr + 1);
-				unsigned seqnum;
+				uint32_t seqnum;
 				memcpy(&seqnum,payload,4);
 				//printf("id : %d\n",seqnum);
 				rte_be16_t length = udp_hdr->dgram_len;
@@ -162,6 +164,12 @@ lcore_hello(__rte_unused void *arg)
 					printf("actual : %d\n",seqnum);
 					printf("packet lost\n");
 					// expected_seqnum = seqnum;
+					printf("number of pkts received : %lu\n",global_packet_counter);
+					gettimeofday(&current_time, NULL);
+					double elapsed = 0.0;
+					elapsed = (current_time.tv_sec - start_time.tv_sec) + (current_time.tv_usec - start_time.tv_usec) / 1000000.0;
+					printf("final goodput : %lf\n",((goodput*8)/1000000)/elapsed);
+					expected_seqnum = seqnum;
 					return;
 				}
 				global_packet_counter++;
@@ -185,11 +193,21 @@ lcore_hello(__rte_unused void *arg)
 				empty_cycle_counter = 0;
 			}
 			printf("goodput : %lf\n", ((goodput*8)/1000000)/elapsed);
-			if(goodput<previous_goodput){
-				printf("goodput decreased\n");
-				return 0;
+			
+			if(goodput>max_goodput){
+				max_goodput = goodput;
+				decreased_counter = 0;
 			}
+			else{
+				decreased_counter++;
+				if(decreased_counter>3){
+					printf("final goodput : %lf\n",((max_goodput*8)/1000000)/elapsed);
+					return 0;
+				}
+			}
+			
 			printf("number of packets : %lu\n",packet_counter);
+			// printf("number of pkts received : %lu\n",global_packet_counter);
 			previous_goodput = goodput;
 			goodput = 0;
 			packet_counter = 0;

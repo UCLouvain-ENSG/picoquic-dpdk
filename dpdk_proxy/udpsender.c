@@ -59,11 +59,11 @@
 #define MEMPOOL_CACHE_SIZE 256
 #define RTE_TEST_RX_DESC_DEFAULT 1024
 #define RTE_TEST_TX_DESC_DEFAULT 1024
-uint32_t tx_ip_src_addr = (198U << 24) | (18 << 16) | (0 << 8) | 1;
-uint32_t tx_ip_dst_addr = (198U << 24) | (18 << 16) | (0 << 8) | 2;
+uint32_t tx_ip_src_addr = (4U << 24) | (18 << 16) | (0 << 8) | 1;
+uint32_t tx_ip_dst_addr = (4U << 24) | (18 << 16) | (0 << 8) | 2;
 
-uint16_t tx_udp_src_port = 9;
-uint16_t tx_udp_dst_port = 9;
+uint16_t tx_udp_src_port = 87;
+uint16_t tx_udp_dst_port = 87;
 
 #define IP_DEFTTL 64
 struct rte_mempool *mb_pool;
@@ -203,6 +203,14 @@ void copy_buf_to_pkt(void *buf, unsigned len, struct rte_mbuf *pkt, unsigned off
     return;
 }
 
+void my_sleeper(int it){
+    int size = 10000;
+    char *dummy = malloc(size);
+    for(int i = 0; i < it; i++){
+        memset(dummy,0,size);
+    }
+    free(dummy);
+}
 static int
 lcore_hello(__rte_unused void *arg)
 {
@@ -300,8 +308,8 @@ lcore_hello(__rte_unused void *arg)
     struct rte_ether_hdr *eth_hdr;
 
     char udp_payload[1200];
-    unsigned my_counter = 0;
-    memset(udp_payload,48,1200);
+    uint32_t my_counter = 0;
+    memset(udp_payload,0,1200);
     struct timeval start_time;
     struct timeval current_time;
     double slow_start_delay = 15;
@@ -312,61 +320,88 @@ lcore_hello(__rte_unused void *arg)
     
 	gettimeofday(&start_time, NULL);
     uint64_t packet_counter = 0;
-    // for(int i = 0; i<10000;i++)
+    //for(int i = 0; i<1000000;i++)
+    uint32_t pacing_counter = 0;
     while (1)
     {
-        
-        memcpy(udp_payload,&my_counter,4);
-        my_counter++;
-
         gettimeofday(&current_time, NULL);        
         double elapsed = 0.0;
-		elapsed = (current_time.tv_sec - start_time.tv_sec) + (current_time.tv_usec - start_time.tv_usec) / 1000000.0;
-        if(elapsed > 0.5){
-            u_int64_t new_rate = rate + ((uint64_t) (50*1000)) *multiplier;
+		elapsed = (current_time.tv_sec*1000 - start_time.tv_sec*1000) + (current_time.tv_usec/1000 - start_time.tv_usec/1000);
+        if(elapsed > 1000){
+            u_int64_t new_rate = rate + ((uint64_t) (100*1000)) *multiplier;
             configure_token_bucket(&tb, new_rate, ((u_int64_t ) 4) * new_rate);
             rate = new_rate;
             gettimeofday(&start_time, NULL);
         }
        
-        int offset = 0;
-        m = rte_pktmbuf_alloc(mb_pool);
-        
-        if (m == NULL)
-        {
-            printf("fail to init pktmbuf\n");
-            rte_exit(EXIT_FAILURE, "%s\n", rte_strerror(rte_errno));
-            return 0;
-        }
-        eth_hdr = rte_pktmbuf_mtod(m, struct rte_ether_hdr *);
 
-        eth_hdr -> ether_type = rte_cpu_to_be_16(RTE_ETHER_TYPE_IPV4);
+        wait_until_token_available(&tb, (uint64_t)actual_size*8*16);
+        for(int i = 0; i < 16; i++){
+
+            int offset = 0;
+            memcpy(udp_payload,&my_counter,4);
+            my_counter++;
+            m = rte_pktmbuf_alloc(mb_pool);
+            
+            if (m == NULL)
+            {
+                printf("fail to init pktmbuf\n");
+                rte_exit(EXIT_FAILURE, "%s\n", rte_strerror(rte_errno));
+                return 0;
+            }
+            eth_hdr = rte_pktmbuf_mtod(m, struct rte_ether_hdr *);
+
+            eth_hdr -> ether_type = rte_cpu_to_be_16(RTE_ETHER_TYPE_IPV4);
 #if RTE_VERSION < RTE_VERSION_NUM(21,11,0,0)
-        rte_ether_addr_copy(&eth_addr, &eth_hdr->s_addr);
-        rte_ether_addr_copy(&eth_addr_peer, &eth_hdr->d_addr);
+            rte_ether_addr_copy(&eth_addr, &eth_hdr->s_addr);
+            rte_ether_addr_copy(&eth_addr_peer, &eth_hdr->d_addr);
 #else
-        rte_ether_addr_copy(&eth_addr, &eth_hdr->src_addr);
-        rte_ether_addr_copy(&eth_addr_peer, &eth_hdr->dst_addr);
+            rte_ether_addr_copy(&eth_addr, &eth_hdr->src_addr);
+            rte_ether_addr_copy(&eth_addr_peer, &eth_hdr->dst_addr);
 #endif
-        setup_pkt_udp_ip_headers(&ip_hdr, &rte_udp_hdr, actual_size);
-        copy_buf_to_pkt(eth_hdr, sizeof(struct rte_ether_hdr), m, offset);
-        offset += sizeof(struct rte_ether_hdr);
-        copy_buf_to_pkt(&ip_hdr, sizeof(struct rte_ipv4_hdr), m, offset);
-        offset += sizeof(struct rte_ipv4_hdr);
-        copy_buf_to_pkt(&rte_udp_hdr, sizeof(struct rte_udp_hdr), m, offset);
-        offset += sizeof(struct rte_udp_hdr);
-        copy_buf_to_pkt(udp_payload, actual_size, m, offset);
-        offset += actual_size;
-        // inchallah ca marche
-        // printf("offset : %d\n",offset);
-        // printf("rte_eth_hdr : %d\n",sizeof(struct rte_ether_hdr));
-        // printf("length : %d\n",htons(ip_hdr.total_length));
-        m->data_len = offset;
-        m->pkt_len = offset;
-        //printf("offset : %d\n",offset);
-        wait_until_token_available(&tb, (uint64_t)actual_size*8);
-        int sent = rte_eth_tx_burst(0, 0, &m,1);
-        packet_counter += (uint64_t)sent;
+            setup_pkt_udp_ip_headers(&ip_hdr, &rte_udp_hdr, actual_size);
+            copy_buf_to_pkt(eth_hdr, sizeof(struct rte_ether_hdr), m, offset);
+            offset += sizeof(struct rte_ether_hdr);
+            copy_buf_to_pkt(&ip_hdr, sizeof(struct rte_ipv4_hdr), m, offset);
+            offset += sizeof(struct rte_ipv4_hdr);
+            copy_buf_to_pkt(&rte_udp_hdr, sizeof(struct rte_udp_hdr), m, offset);
+            offset += sizeof(struct rte_udp_hdr);
+            copy_buf_to_pkt(udp_payload, actual_size, m, offset);
+            offset += actual_size;
+
+            // inchallah ca marche
+            // printf("offset : %d\n",offset);
+            // printf("rte_eth_hdr : %d\n",sizeof(struct rte_ether_hdr));
+            // printf("length : %d\n",htons(ip_hdr.total_length));
+            m->data_len = offset;
+            m->pkt_len = offset;
+
+
+            //printf("offset : %d\n",offset);
+            
+            int sent = rte_eth_tx_burst(0, 0, &m,1);
+        }
+        // struct timespec request = {0, 10000};
+        // nanosleep(&request, NULL);
+
+
+        packet_counter += 16;
+        struct rte_ipv4_hdr *ip_hdr2;
+        ip_hdr2 = (struct rte_ipv4_hdr *)(rte_pktmbuf_mtod(m, char *) + sizeof(struct rte_ether_hdr));
+
+        struct rte_udp_hdr *udp2 = (struct rte_udp_hdr *)((unsigned char *)ip_hdr2 +
+                                                        sizeof(struct rte_ipv4_hdr));
+        unsigned char *payload2 = (unsigned char *)(udp2 + 1);
+        uint32_t msg;
+        memcpy(&msg,payload2,4);
+        if(msg != (my_counter -1)){
+                printf("loss detected at packet real dumb %u\n",my_counter);
+                printf("expected : %u\n",my_counter);
+                printf("actual : %u\n",my_counter);
+                printf("packet lost\n");
+                my_counter = msg + 1;
+        }
+        
         // if(packet_counter % 1000 == 0){
         //     printf("packet_counter: %d\n",packet_counter);
         // }
