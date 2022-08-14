@@ -7,24 +7,21 @@ import subprocess
 import json
 import shlex
 import time
-
+import re
 from toml import TomlDecodeError
 
 def retrieve_cards(number):
-    cards = open('cards.txt', 'r')
-    lines = cards.readlines()
-    counter = 0
+    cards = open('/mnt/C072C89972C89616/school/memoire/MemoireRemote/dpdk_picoquic/EverythingTesting/scripts/cards.txt', 'r')
     nic_counter = 0
     ret = ''
-    for line in lines:
-        if(counter < 4):
-            counter +=1
-        else:
-            line_as_array = line.split()
+    for card in cards:
+        if re.search('Virtual Function',card):
+            line_as_array = card.split()
             card_id = line_as_array[0]
+            card_id = card_id[-7:]
             ret += '-a 0000:{} '.format(card_id)
-            nic_counter += 1
-            if nic_counter == number:
+            nic_counter+=1
+            if nic_counter == number :
                 return ret
     return ret
 
@@ -36,11 +33,11 @@ nss='sudo ip netns exec nsSERVER'
 serverName = 'server'
 clientName = 'client1'
 process_name = 'dpdk_picoquicdemo'
-dpdk1Client = '--dpdk -l 0-1 -a 0000:18:00.1 -- -A 50:6b:4b:f3:7c:70'
-dpdk15Client = '--dpdk -l 0-15 {} -- -A 50:6b:4b:f3:7c:71'.format(retrieve_cards(15))
-dpdk8Client = '--dpdk -l 0-8 {} -- -A 50:6b:4b:f3:7c:71'.format(retrieve_cards(8))
+dpdk1Client = '--dpdk -l 0-1 -a 0000:18:00.0 -- -A 50:6b:4b:f3:7c:70'
+# dpdk15Client = '--dpdk -l 0-15 {} -- -A 50:6b:4b:f3:7c:70'.format(retrieve_cards(15))
+dpdk8Client = '--dpdk -l 0-8 {} -- -A 50:6b:4b:f3:7c:70'.format(retrieve_cards(8))
 dpdk1Server = '--dpdk -l 0-1 -a 0000:18:00.0 --'
-dpdkVarServer = '--dpdk -l 0-{} -a 0000:51:00.1 --'
+dpdkVarServer = '--dpdk -l 0-{} -a 0000:18:00.0 --'
 nodpdk = 'nodpdk'
 dpdk_picoquic_directory = '/home/nikita/memoire/dpdk_picoquic'
 wireguard_directory = '/home/nikita/memoire/wireguard'
@@ -164,7 +161,7 @@ def test_throughput():
     for it in range(15):
         clientArgsDpdk = {"eal" : dpdk1Client,
                     "args": "-D",
-                    "output_file":"throughputBBRPatched_dpdk.txt",
+                    "output_file":"throughputBBRFair_dpdk.txt",
                     "ip_and_port" : "10.100.0.2 4443",
                     "request" : "/20000000000",
                     "keyword" : "Mbps"}
@@ -268,19 +265,75 @@ def test_RSS_15():
         time.sleep(10)
         
 def test_RSS_8():
-    for server_core in [8]: 
+    for server_core in [5,6,7,8]: 
         clientArgsDpdk = {"eal" : dpdk8Client,
                     "args": "-D",
-                    "output_file":"TP_{}core_dpdk_8_client.txt".format(str(server_core)),
+                    "output_file":"RSS/TP_{}core_dpdk_8_client.txt".format(str(server_core)),
                     "ip_and_port" : "10.100.0.2 4443",
                     "request" : "/20000000000",
-                    "keyword" : "Mbps"}
+                    "keyword" : "queueid"}
         
         serverArgsDpdk = {"eal" : dpdkVarServer.format(str(server_core)),
                     "args" : "",
                     "port" : "-p 4443"}
         test_generic_repeting_client(clientArgsDpdk,serverArgsDpdk,False,8)
         time.sleep(10)
+        
+# def test_RSS_8_balance():
+#     for server_core in [5,7,8]: 
+#         clientArgsDpdk = {"eal" : dpdk8Client,
+#                     "args": "-D",
+#                     "output_file":"RSS/balance_{}core_dpdk_8_client.txt".format(str(server_core)),
+#                     "ip_and_port" : "10.100.0.2 4443",
+#                     "request" : "/200",
+#                     "keyword" : "queueid"}
+        
+#         serverArgsDpdk = {"eal" : dpdkVarServer.format(str(server_core)),
+#                     "args" : "",
+#                     "port" : "-p 4443"}
+#         test_generic_repeting_client(clientArgsDpdk,serverArgsDpdk,False,1)
+#         time.sleep(5)
+        
+        
+def test_RSS_8_balance():
+    for nb_cores in [5,7,8]:
+        cmdClient = ("sudo LD_LIBRARY_PATH=$LD_LIBRARY_PATH /home/nikita/memoire/dpdk_picoquic/dpdk_picoquicdemo " 
+        "--dpdk -l 0-8 -a 0000:18:00.2 -a 0000:18:00.3 -a 0000:18:00.4 -a 0000:18:00.5 -a 0000:18:00.6 -a 0000:18:00.7 -a 0000:18:01.0 -a 0000:18:01.1  "
+        "-- -A 50:6b:4b:f3:7c:70 -D 10.100.0.2 4443 /200")
+        
+        cmdServer = ("sudo LD_LIBRARY_PATH=$LD_LIBRARY_PATH "
+        "/home/nikita/memoire/dpdk_picoquic/dpdk_picoquicdemo --dpdk -l 0-{} -a 0000:18:00.0 -- " 
+        "-p 4443 | grep 'queueid' >> {}/EverythingTesting/data/RSS/balance_{}core_dpdk_8_client.txt").format(nb_cores,dpdk_picoquic_directory,str(nb_cores))
+        
+        server = run_command(cmdServer,serverName,dpdk_picoquic_directory)
+        time.sleep(3)
+        client = run_command(cmdClient,clientName,dpdk_picoquic_directory)
+        client.wait()
+        killer = run_command("sh killDpdkProcess.sh >> /dev/null",clientName,dpdk_picoquic_directory)
+        killer.wait()
+        killer = run_command("sh killDpdkProcess.sh >> /dev/null",serverName,dpdk_picoquic_directory)
+        killer.wait()
+        time.sleep(3)
+        
+def test_RSS_8_balance_X():
+    for nb_cores in [5,7,8]:
+        cmdClient = ("sudo LD_LIBRARY_PATH=$LD_LIBRARY_PATH /home/nikita/memoire/dpdk_picoquic/dpdk_picoquicdemo " 
+        "--dpdk -l 0-8 -a 0000:18:00.2 -a 0000:18:00.3 -a 0000:18:00.4 -a 0000:18:00.5 -a 0000:18:00.6 -a 0000:18:00.7 -a 0000:18:01.0 -a 0000:18:01.1  "
+        "-- -A 50:6b:4b:f3:7c:70 -D -X 10.100.0.2 4443 /200")
+        
+        cmdServer = ("sudo LD_LIBRARY_PATH=$LD_LIBRARY_PATH "
+        "/home/nikita/memoire/dpdk_picoquic/dpdk_picoquicdemo --dpdk -l 0-{} -a 0000:18:00.0 -- " 
+        "-p 4443 | grep 'queueid' >> {}/EverythingTesting/data/RSS/balance_{}core_dpdk_8_client_X.txt").format(nb_cores,dpdk_picoquic_directory,str(nb_cores))
+        
+        server = run_command(cmdServer,serverName,dpdk_picoquic_directory)
+        time.sleep(3)
+        client = run_command(cmdClient,clientName,dpdk_picoquic_directory)
+        client.wait()
+        killer = run_command("sh killDpdkProcess.sh >> /dev/null",clientName,dpdk_picoquic_directory)
+        killer.wait()
+        killer = run_command("sh killDpdkProcess.sh >> /dev/null",serverName,dpdk_picoquic_directory)
+        killer.wait()
+        time.sleep(3)
         
 def test_RSS_8_X():
     for server_core in [8]: 
@@ -317,9 +370,9 @@ def test_request():
     
     clientArgsDpdk = {"eal" : dpdk1Client,
                 "args": "-D",
-                "output_file":"request_100_dpdk.txt",
+                "output_file":"request_75_dpdk.txt",
                 "ip_and_port" : "10.100.0.2 4443",
-                "request" : "*100:/20000",
+                "request" : "*75:/30000",
                 "keyword" : "Mbps"}   
     serverArgsDpdk = {"eal" : dpdk1Server,
                 "args" : "",
@@ -361,25 +414,12 @@ def test_batching_fixed_RX():
         time.sleep(10)
         
         
-def test_batching_fixed_RX32():
-    for i in [1,2,3,4,8,16,32]:
-        clientArgsDpdk = {"eal" : dpdk1Client,
-                    "args": "-D -* {} -@ 32".format(str(i)),
-                    "output_file":"throughput_{}_fixed_20GB_RX32_dpdk.txt".format(str(i)),
-                    "ip_and_port" : "10.100.0.2 4443",
-                    "request" : "/20000000000",
-                    "keyword" : "Mbps"}
-        
-        serverArgsDpdk = {"eal" : dpdk1Server,
-                    "args" : "-* {} -@ 32".format(str(i)),
-                    "port" : "-p 4443"}
-        test_generic_repeting_client(clientArgsDpdk,serverArgsDpdk,False,15)
-        
+      
 def test_batching_fixed_RX64():
     for i in [1,2,3,4,8,16,32,64]:
         clientArgsDpdk = {"eal" : dpdk1Client,
                     "args": "-D -* {} -@ 64".format(str(i)),
-                    "output_file":"throughput_{}_fixed_20GB_RX64_dpdk.txt".format(str(i)),
+                    "output_file":"batching/throughput_{}_fixed_20GB_RX64_dpdk.txt".format(str(i)),
                     "ip_and_port" : "10.100.0.2 4443",
                     "request" : "/20000000000",
                     "keyword" : "Mbps"}
@@ -388,6 +428,34 @@ def test_batching_fixed_RX64():
                     "args" : "-* {} -@ 64".format(str(i)),
                     "port" : "-p 4443"}
         test_generic_repeting_client(clientArgsDpdk,serverArgsDpdk,False,15)
+        
+def test_batching_fixed_TX64():
+    for i in [4,8,16,32,64]:
+        clientArgsDpdk = {"eal" : dpdk1Client,
+                    "args": "-D -* 64 -@ {}".format(str(i)),
+                    "output_file":"batching/throughput_{}_fixed_20GB_TX64_dpdk.txt".format(str(i)),
+                    "ip_and_port" : "10.100.0.2 4443",
+                    "request" : "/20000000000",
+                    "keyword" : "Mbps"}
+        
+        serverArgsDpdk = {"eal" : dpdk1Server,
+                    "args" : "-* 64 -@ {}".format(str(i)),
+                    "port" : "-p 4443"}
+        test_generic_repeting_client(clientArgsDpdk,serverArgsDpdk,False,15)
+        
+# def test_batching_fixed_RX64():
+#     for i in [1,2,3,4,8,16,32,64]:
+#         clientArgsDpdk = {"eal" : dpdk1Client,
+#                     "args": "-D -* {} -@ 64".format(str(i)),
+#                     "output_file":"throughput_{}_fixed_20GB_RX64_dpdk.txt".format(str(i)),
+#                     "ip_and_port" : "10.100.0.2 4443",
+#                     "request" : "/20000000000",
+#                     "keyword" : "Mbps"}
+        
+#         serverArgsDpdk = {"eal" : dpdk1Server,
+#                     "args" : "-* {} -@ 64".format(str(i)),
+#                     "port" : "-p 4443"}
+#         test_generic_repeting_client(clientArgsDpdk,serverArgsDpdk,False,15)
         
         
 def test_batching2():
@@ -673,7 +741,7 @@ def wireguard_testing():
 
 def picotls_test():
     for i in range(5):
-        server = run_command("sudo sh server.sh &>> {}/EverythingTesting/data/cmp/picotls.txt".format(dpdk_picoquic_directory),serverName,picotls_directory)
+        server = run_command("sudo sh server.sh &>> {}/EverythingTesting/data/cmp/picotlsFair.txt".format(dpdk_picoquic_directory),serverName,picotls_directory)
         time.sleep(3)
         client = run_command("sudo sh client.sh",clientName,picotls_directory)
         time.sleep(30)
@@ -685,16 +753,26 @@ def picotls_test():
 def quiche_test():
     for i in range(5):
         server = run_command("sh server.sh",serverName,quiche_directory)
-        client = run_command("sh client.sh >> {}/EverythingTesting/data/cmp/quiche.txt".format(dpdk_picoquic_directory),clientName,quiche_directory)
+        time.sleep(3)
+        client = run_command("sh client.sh >> {}/EverythingTesting/data/cmp/quicheFair.txt".format(dpdk_picoquic_directory),clientName,quiche_directory)
         client.wait()
         clean_everything()
         time.sleep(3)
     
+def picoquic_test():
+    for i in range(3):
+        server = run_command("sh exec_scripts/server_nodpdk.sh",serverName,dpdk_picoquic_directory)
+        time.sleep(3)
+        client = run_command("sh exec_scripts/client_nodpdk.sh >> {}/EverythingTesting/data/cmp/picoquicFair.txt".format(dpdk_picoquic_directory),clientName,dpdk_picoquic_directory)
+        client.wait()
+        clean_everything()
+        time.sleep(3)
     
 def msquic_test():
     for i in range(5):
         server = run_command("sh server.sh",serverName,msquic_directory)
-        client = run_command("sh client.sh >> {}/EverythingTesting/data/cmp/msquic.txt".format(dpdk_picoquic_directory),clientName,msquic_directory)
+        time.sleep(3)
+        client = run_command("sh client.sh >> {}/EverythingTesting/data/cmp/msquicFair.txt".format(dpdk_picoquic_directory),clientName,msquic_directory)
         client.wait()
         clean_everything()
         time.sleep(3)
@@ -732,17 +810,27 @@ if __name__ == "__main__":
     #proxy_UDP_testing()
     #proxy_UDP_testing()
         
-        
+    #picoquic_test()
     #picotls_test()
     #quiche_test()
     #msquic_test()
-    
+    #test_request()
+    # test_batching_fixed_RX64()
+    # time.sleep(15)
+    # test_batching_fixed_TX64()
     #wireguard_testing()
     #proxy_UDP_testing()
     #proxy_TCP_testing()
     #test_throughput()
     #proxy_UDP_testing()
-    proxy_UDP_testing_simple()
+    #proxy_UDP_testing_simple()
+    
+    #test_RSS_8()
+    
+    #print(retrieve_cards(8))
+    
+    test_RSS_8_balance()
+    test_RSS_8_balance_X()
         
     
 

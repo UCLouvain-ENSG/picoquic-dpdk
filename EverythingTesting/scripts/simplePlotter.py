@@ -290,13 +290,13 @@ def handshake_time_comparison_plot_box():
     item2 = ItemToPlot("picoquic-dpdk",dataFunction,("../data/handshakeBBRfixed_dpdk.txt",time_index))
     comparison_plot_box([item1,item2],"","Request time (us)","../plots/handshake_time_box.pdf")
     
-def handshake_time_comparison_plot_box_clean():
-    def dataFunction(file,index):
-        data = get_full_data(file,index)
-        return [d*(10**6) for d in data if d*(10**6) < 50000]
-    item1 = ItemToPlot("picoquic",dataFunction,("../data/handshakeBBR_nodpdk.txt",time_index))
-    item2 = ItemToPlot("picoquic-dpdk",dataFunction,("../data/handshakeBBR_dpdk.txt",time_index))
-    comparison_plot_box([item1,item2],"","Request time (us)","../plots/handshake_time_box_clean.pdf")
+# def handshake_time_comparison_plot_box_clean():
+#     def dataFunction(file,index):
+#         data = get_full_data(file,index)
+#         return [d*(10**6) for d in data if d*(10**6) < 50000]
+#     item1 = ItemToPlot("picoquic",dataFunction,("../data/handshakeBBR_nodpdk.txt",time_index))
+#     item2 = ItemToPlot("picoquic-dpdk",dataFunction,("../data/handshakeBBR_dpdk.txt",time_index))
+#     comparison_plot_box([item1,item2],"","Request time (us)","../plots/handshake_time_box_clean.pdf")
     
 def handshake_comparison_plot():
     def dataFunction(file,index):
@@ -310,8 +310,8 @@ def request_comparison_plot():
     def dataFunction(file,index):
         data = get_full_data(file,index)
         return [d*(10**6) for d in data]
-    item1 = ItemToPlot("picoquic",dataFunction,("../data/request_100_nodpdk.txt",time_index))
-    item2 = ItemToPlot("picoquic-dpdk",dataFunction,("../data/request_100_dpdk.txt",time_index))
+    item1 = ItemToPlot("picoquic",dataFunction,("../data/request_75_nodpdk.txt",time_index))
+    item2 = ItemToPlot("picoquic-dpdk",dataFunction,("../data/request_75_dpdk.txt",time_index))
     comparison_plot_box([item1,item2],"","Request time (us)","../plots/request_time_box.pdf")
     
     
@@ -364,19 +364,26 @@ def noproxy_pkt_size_plot():
     
 ###BATCHING###
 
-def batching32_plot():
-    items = []
-    for batching in [1,2,3,4,8,16,32]:
-        item = ItemToPlot("{}".format(str(batching)),get_full_data,("../data/throughput_{}_fixed_20GB_RX32_dpdk.txt".format(str(batching)),throughput_index))
-        items.append(item)
-    comparison_plot_box(items, "","Throughput (Mbps)","../plots/batching_impact_FixedRX.pdf","rx_batching")
-    
-def batching64_plot():
+def batchingTX_fixedRX64_plot():
     items = []
     for batching in [1,2,3,4,8,16,32,64]:
         item = ItemToPlot("{}".format(str(batching)),get_full_data,("../data/throughput_{}_fixed_20GB_RX64_dpdk.txt".format(str(batching)),throughput_index))
         items.append(item)
     comparison_plot_box(items, "","Throughput (Mbps)","../plots/batching_impact_FixedRX.pdf","tx_batching")
+    
+# def batching64_plot():
+#     items = []
+#     for batching in [1,2,3,4,8,16,32,64]:
+#         item = ItemToPlot("{}".format(str(batching)),get_full_data,("../data/throughput_{}_fixed_20GB_RX64_dpdk.txt".format(str(batching)),throughput_index))
+#         items.append(item)
+#     comparison_plot_box(items, "","Throughput (Mbps)","../plots/batching_impact_FixedRX.pdf","tx_batching")
+
+def batchingRX_fixedTX64_plot():
+    items = []
+    for batching in [4,8,16,32,64]:
+        item = ItemToPlot("{}".format(str(batching)),get_full_data,("../data/batching/throughput_{}_fixed_20GB_TX64_dpdk.txt".format(str(batching)),throughput_index))
+        items.append(item)
+    comparison_plot_box(items, "","Throughput (Mbps)","../plots/batching_impact_FixedTX.pdf","rx_batching")
     
 def batching_no_CC_plot():
     items = []
@@ -385,7 +392,7 @@ def batching_no_CC_plot():
         items.append(item)
     comparison_plot_box(items, "Batching size impact on throughput","Throughput (Mbps)","../plots/batching_impact_noCC.png")
 
-def batching_plot():
+def batching_plot_fixedTX64_plot():
     items = []
     for batching in [4,8,16,32,64]:
         item = ItemToPlot("{}".format(str(batching)),get_full_data,("../data/throughput_{}_dpdk.txt".format(str(batching)),throughput_index))
@@ -448,6 +455,81 @@ def RSS_plot8X():
         item = ItemToPlot("{}".format(str(core)),get_full_data,("../data/TP_{}core_dpdk_8_client_X.txt".format(str(core)),throughput_index))
         items.append(item)
     comparison_plot_box(items, " " ,"Throughput (Mbps)","../plots/RSS8X.pdf","# of cores")
+    
+    
+def RSS_PLOT_BAR():
+    
+    x = np.arange(8)
+    y1_tmp = get_full_data("../data/RSS/balance_5core_dpdk_8_client.txt",
+                       2,"queueid")
+    y1 = np.zeros(8,dtype=int)
+    for val in y1_tmp:
+        y1[int(val)] += 1
+    y2_tmp = get_full_data("../data/RSS/balance_7core_dpdk_8_client.txt",
+                       2,"queueid")
+    y2 = np.zeros(8,dtype=int)
+    for val in y2_tmp:
+        y2[int(val)] += 1
+    y3_tmp = get_full_data("../data/RSS/balance_8core_dpdk_8_client.txt",
+                       2,"queueid")
+    y3 = np.zeros(8,dtype=int)
+    for val in y3_tmp:
+        y3[int(val)] += 1
+    
+    width = 0.2
+    
+    # plot data in grouped manner of bar type
+    plt.ylim(0, 4)
+    plt.bar(x-0.2, y1, width, color='cyan')
+    plt.bar(x, y2, width, color='orange')
+    plt.bar(x+0.2, y3, width, color='green')
+    plt.xticks(x, [str(i) for i in range(8)])
+    
+    plt.xlabel("Core id")
+    plt.ylabel("Number of clients")
+    plt.legend(["Server with 5 cores", "Server with 7 cores", "Server with 8 cores"])
+    plt.savefig("../plots/RSS_balance_noX.pdf",format = 'pdf')
+    plt.figure().clear()
+    plt.close()
+    plt.cla()
+    plt.clf()
+    
+    
+def RSS_PLOT_BAR_X():
+    
+    x = np.arange(8)
+    y1_tmp = get_full_data("../data/RSS/balance_5core_dpdk_8_client_X.txt",
+                       2,"queueid")
+    y1 = np.zeros(8,dtype=int)
+    for val in y1_tmp:
+        y1[int(val)] += 1
+    y2_tmp = get_full_data("../data/RSS/balance_7core_dpdk_8_client_X.txt",
+                       2,"queueid")
+    y2 = np.zeros(8,dtype=int)
+    for val in y2_tmp:
+        y2[int(val)] += 1
+    y3_tmp = get_full_data("../data/RSS/balance_8core_dpdk_8_client_X.txt",
+                       2,"queueid")
+    y3 = np.zeros(8,dtype=int)
+    for val in y3_tmp:
+        y3[int(val)] += 1
+    
+    width = 0.2
+    
+    # plot data in grouped manner of bar type
+    plt.ylim(0, 4)
+    plt.bar(x-0.2, y1, width, color='cyan')
+    plt.bar(x, y2, width, color='orange')
+    plt.bar(x+0.2, y3, width, color='green')
+    plt.xticks(x, [str(i) for i in range(8)])
+    plt.xlabel("Core id")
+    plt.ylabel("Number of clients")
+    plt.legend(["Server with 5 cores", "Server with 7 cores", "Server with 8 cores"])
+    plt.savefig("../plots/RSS_balance_X.pdf",format = 'pdf')
+    plt.figure().clear()
+    plt.close()
+    plt.cla()
+    plt.clf()
 
 ##########$RSS#############
 
@@ -578,7 +660,8 @@ def prox_TCP_UDP_PPS():
     items2 = []
     for size in range(100,1300,100):
         
-        extractor = lambda x : float(x)*1000000/8/size
+        def extractor(x,mysize=size):
+            return float(x)*1000000/8/mysize
         
         items1.append(ItemToPlot("TCP",get_full_data_perf_nb_packets,("../data/proxy/proxyTCP{}.txt".format(str(size)),perf_tp_index,size)))
         items2.append(ItemToPlot("UDP",get_full_data,("../data/proxy/proxyUDP{}.txt".format(str(size)),3,"final",extractor)))
@@ -621,16 +704,16 @@ def implems_cmp():
     quiche_index = 2
     picotls_index = 6
     items = []
-    items.append(ItemToPlot("picoquic",get_full_data,("../data/throughputBBR_nodpdk.txt",throughput_index)))
+    items.append(ItemToPlot("picoquic",get_full_data,("../data/cmp/picoquicFair.txt",throughput_index, "Mbps")))
     items.append(ItemToPlot("picoquic-dpdk",get_full_data,("../data/throughputBBR_dpdk.txt",throughput_index)))
     
-    items.append(ItemToPlot("msquic", get_full_data,("../data/cmp/msquic.txt",msquic_index,"kbps",lambda a : float(a)/1000)))
-    items.append(ItemToPlot("quiche", get_full_data,("../data/cmp/quiche.txt",quiche_index,"Mbps")))
+    items.append(ItemToPlot("msquic", get_full_data,("../data/cmp/msquicFair.txt",msquic_index,"kbps",lambda a : float(a)/1000)))
+    items.append(ItemToPlot("quiche", get_full_data,("../data/cmp/quicheFair.txt",quiche_index,"Mbps")))
     
     f = lambda x : x[1:-8]
-    items.append(ItemToPlot("picotls", get_full_data,("../data/cmp/picotls.txt",picotls_index,"Mbps",f)))
+    items.append(ItemToPlot("picotls", get_full_data,("../data/cmp/picotlsFair.txt",picotls_index,"Mbps",f)))
     
-    comparison_plot_box(items, " ", "Throughput (Mbps)","../plots/implem_cmp.pdf")
+    comparison_plot_box(items, " ", "Throughput (Mbps)","../plots/implem_cmp_fair.pdf")
     
     
     
@@ -678,9 +761,9 @@ if __name__ == "__main__":
     # TCP_proxy_var_sizes_proxy_nb_packets()
     # UDP_proxy_var_sizes_proxy_nb_packets()
     
-    # request_comparison_plot()
-    # throughput_comparison_plot_box()
-    # handshake_time_comparison_plot_box()
+    #request_comparison_plot()
+    #throughput_comparison_plot_box()
+    #handshake_time_comparison_plot_box()
     #TCP_proxy_cmp_wireguard_PPS()
     #implems_cmp()
     
@@ -690,6 +773,15 @@ if __name__ == "__main__":
     
     #TCP_proxy_cmp_wireguard_TP()
     #TCP_proxy_cmp_wireguard_PPS()
-    # prox_TCP_UDP_TP()
-    # prox_TCP_UDP_PPS()
-    prox_TCP_vs_forwarder_TP()
+    #prox_TCP_UDP_TP()
+    #prox_TCP_UDP_PPS()
+    #prox_TCP_vs_forwarder_TP()
+    #implems_cmp()
+    # batchingRX_fixedRX32_plot()
+    # batching32_plot()
+    
+    # batchingTX_fixedRX64_plot()
+    # batchingRX_fixedTX64_plot()
+    
+    RSS_PLOT_BAR()
+    RSS_PLOT_BAR_X()
