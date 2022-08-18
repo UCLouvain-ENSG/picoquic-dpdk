@@ -782,8 +782,28 @@ def msquic_test():
 
 
 
+########################INTEROP#######################
 
 
+
+
+
+def interop_test():
+    for i in range(5):
+        server = run_command("sh exec_scripts/newServer.sh",serverName,dpdk_picoquic_directory)
+        time.sleep(3)
+        client = run_command("sh exec_scripts/client.sh >> {}/EverythingTesting/data/cmp/clientNoDPDKInterop.txt".format(dpdk_picoquic_directory),clientName,dpdk_picoquic_directory)
+        client.wait()
+        time.sleep(3)
+        
+    for i in range(5):
+        server = run_command("sh exec_scripts/server.sh",serverName,dpdk_picoquic_directory)
+        time.sleep(3)
+        client = run_command("sh exec_scripts/newClient.sh >> {}/EverythingTesting/data/cmp/clientDPDKInterop.txt".format(dpdk_picoquic_directory),clientName,dpdk_picoquic_directory)
+        client.wait()
+        time.sleep(3)
+        
+########################INTEROP#######################
 
 if __name__ == "__main__":
     #test_handshake()
@@ -829,8 +849,10 @@ if __name__ == "__main__":
     
     #print(retrieve_cards(8))
     
-    test_RSS_8_balance()
-    test_RSS_8_balance_X()
+    # test_RSS_8_balance()
+    # test_RSS_8_balance_X()
+    
+    interop_test()
         
     
 

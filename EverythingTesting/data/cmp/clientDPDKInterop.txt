@@ -1,0 +1,182 @@
+EAL setup finshed
+Starting Picoquic (v1.01) connection to server = 10.100.0.2, port = 4443
+The IP address of client 0 is 16777236
+Client exit with code = 0
+MAX_PKT_BURST_RX : 32
+MAX_PKT_BURST_TX : 32
+Unknown port MAC address. Using default device MAC address...
+queueid : 0
+Client port (AF=2): 23313.
+Negotiated ALPN: h3
+Almost ready!
+
+Connection established. Version = 1, I-CID: 30f7bf044025091, verified: 1
+Opening stream 0 to GET /20000000000
+ARP packet received
+ARP IP (mine) 1000014 (asked) 1000014
+ARP request received, sending reply
+Stream 0 ended after -1474836480 bytes
+All done, Closing the connection.
+Received a request to close the connection.
+The connection is closed!
+Unknown IP protocol : 11
+Quic Bit was greased by the client.
+Quic Bit was greased by the server.
+ECN was not received.
+ECN was not acknowledged.
+Received 20000000025 bytes in 14.988988 seconds, 10674.503189 Mbps.
+max_data_local: 60003145728
+max_max_stream_data_local: 60000003612
+max_data_remote: 1048576
+max_max_stream_data_remote: 2048
+ack_delay_remote: 1000 ... 1000
+max_ack_gap_remote: 64
+ack_delay_local: 1000 ... 25000
+max_ack_gap_local: 8
+max_mtu_sent: 1440
+max_mtu_received: 1440
+EAL setup finshed
+Starting Picoquic (v1.01) connection to server = 10.100.0.2, port = 4443
+The IP address of client 0 is 16777236
+Client exit with code = 0
+MAX_PKT_BURST_RX : 32
+MAX_PKT_BURST_TX : 32
+Unknown port MAC address. Using default device MAC address...
+queueid : 0
+Client port (AF=2): 23313.
+Negotiated ALPN: h3
+Almost ready!
+
+Connection established. Version = 1, I-CID: 80b2074fd124ee63, verified: 1
+Opening stream 0 to GET /20000000000
+ARP packet received
+ARP IP (mine) 1000014 (asked) 1000014
+ARP request received, sending reply
+Stream 0 ended after -1474836480 bytes
+All done, Closing the connection.
+Received a request to close the connection.
+The connection is closed!
+Unknown IP protocol : 11
+Quic Bit was greased by the client.
+Quic Bit was greased by the server.
+ECN was not received.
+ECN was not acknowledged.
+Received 20000000025 bytes in 16.789527 seconds, 9529.750314 Mbps.
+max_data_local: 60003145728
+max_max_stream_data_local: 60000003612
+max_data_remote: 1048576
+max_max_stream_data_remote: 2048
+ack_delay_remote: 1000 ... 1000
+max_ack_gap_remote: 64
+ack_delay_local: 1000 ... 25000
+max_ack_gap_local: 8
+max_mtu_sent: 1440
+max_mtu_received: 1440
+EAL setup finshed
+Starting Picoquic (v1.01) connection to server = 10.100.0.2, port = 4443
+The IP address of client 0 is 16777236
+Client exit with code = 0
+MAX_PKT_BURST_RX : 32
+MAX_PKT_BURST_TX : 32
+Unknown port MAC address. Using default device MAC address...
+queueid : 0
+Client port (AF=2): 23313.
+Negotiated ALPN: h3
+Almost ready!
+
+Connection established. Version = 1, I-CID: 26479e8753e0f6c6, verified: 1
+Opening stream 0 to GET /20000000000
+Stream 0 ended after -1474836480 bytes
+All done, Closing the connection.
+Received a request to close the connection.
+The connection is closed!
+Unknown IP protocol : 11
+Quic Bit was greased by the client.
+Quic Bit was greased by the server.
+ECN was not received.
+ECN was not acknowledged.
+Received 20000000025 bytes in 15.792618 seconds, 10131.315796 Mbps.
+max_data_local: 60003145728
+max_max_stream_data_local: 60000003612
+max_data_remote: 1048576
+max_max_stream_data_remote: 2048
+ack_delay_remote: 1000 ... 1000
+max_ack_gap_remote: 64
+ack_delay_local: 1000 ... 25000
+max_ack_gap_local: 8
+max_mtu_sent: 1440
+max_mtu_received: 1440
+EAL setup finshed
+Starting Picoquic (v1.01) connection to server = 10.100.0.2, port = 4443
+The IP address of client 0 is 16777236
+Client exit with code = 0
+MAX_PKT_BURST_RX : 32
+MAX_PKT_BURST_TX : 32
+Unknown port MAC address. Using default device MAC address...
+ARP packet received
+ARP IP (mine) 1000014 (asked) 1000014
+ARP request received, sending reply
+queueid : 0
+Client port (AF=2): 23313.
+Negotiated ALPN: h3
+Almost ready!
+
+Connection established. Version = 1, I-CID: 61b03607e5c1c26e, verified: 1
+Opening stream 0 to GET /20000000000
+Stream 0 ended after -1474836480 bytes
+All done, Closing the connection.
+Received a request to close the connection.
+The connection is closed!
+Unknown IP protocol : 11
+Quic Bit was greased by the client.
+Quic Bit was greased by the server.
+ECN was not received.
+ECN was not acknowledged.
+Received 20000000025 bytes in 15.784236 seconds, 10136.695891 Mbps.
+max_data_local: 60003145728
+max_max_stream_data_local: 60000003612
+max_data_remote: 1048576
+max_max_stream_data_remote: 2048
+ack_delay_remote: 1000 ... 1000
+max_ack_gap_remote: 64
+ack_delay_local: 1000 ... 25000
+max_ack_gap_local: 5
+max_mtu_sent: 1440
+max_mtu_received: 1440
+EAL setup finshed
+Starting Picoquic (v1.01) connection to server = 10.100.0.2, port = 4443
+The IP address of client 0 is 16777236
+Client exit with code = 0
+MAX_PKT_BURST_RX : 32
+MAX_PKT_BURST_TX : 32
+Unknown port MAC address. Using default device MAC address...
+queueid : 0
+Client port (AF=2): 23313.
+Negotiated ALPN: h3
+Almost ready!
+
+Connection established. Version = 1, I-CID: 5a5dc8c113ec68f7, verified: 1
+Opening stream 0 to GET /20000000000
+ARP packet received
+ARP IP (mine) 1000014 (asked) 1000014
+ARP request received, sending reply
+Stream 0 ended after -1474836480 bytes
+All done, Closing the connection.
+Received a request to close the connection.
+The connection is closed!
+Unknown IP protocol : 11
+Quic Bit was greased by the client.
+Quic Bit was greased by the server.
+ECN was not received.
+ECN was not acknowledged.
+Received 20000000025 bytes in 15.632169 seconds, 10235.303892 Mbps.
+max_data_local: 60003145728
+max_max_stream_data_local: 60000003612
+max_data_remote: 1048576
+max_max_stream_data_remote: 2048
+ack_delay_remote: 1000 ... 1000
+max_ack_gap_remote: 64
+ack_delay_local: 1000 ... 25000
+max_ack_gap_local: 8
+max_mtu_sent: 1440
+max_mtu_received: 1440

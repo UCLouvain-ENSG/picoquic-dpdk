@@ -270,11 +270,16 @@ def throughput_comparison_plot_bar():
     item2 = ItemToPlot("dpdk",take_average,("../data/output_dpdk_tp_enc.txt",throughput_index))
     comparison_plot_bar([item1,item2],"Throughput comparison","Throughput(Mbps)","../plots/Throughput_bar.png")
     
-    
 def throughput_comparison_plot_box():
     item1 = ItemToPlot("picoquic",get_full_data,("../data/throughputBBR_nodpdk.txt",throughput_index))
     item2 = ItemToPlot("picoquic-dpdk",get_full_data,("../data/throughputBBR_dpdk.txt",throughput_index))
     comparison_plot_box([item1,item2],"","Throughput(Mbps)","../plots/Throughput_box.pdf")
+    
+    
+def throughput_comparison_interop_plot_box():
+    item1 = ItemToPlot("picoquic client \n picoquic-dpdk server",get_full_data,("../data/cmp/clientNoDPDKInterop.txt",throughput_index,"Mbps"))
+    item2 = ItemToPlot("picoquic-dpdk client \n picoquic server",get_full_data,("../data/cmp/clientDPDKInterop.txt",throughput_index,"Mbps"))
+    comparison_plot_box([item1,item2],"","Throughput(Mbps)","../plots/Throughput_interop_box.pdf")
     
 def throughput_comparison_plot_box_patched():
     item1 = ItemToPlot("picoquic",get_full_data,("../data/throughputBBR_nodpdk.txt",throughput_index))
@@ -722,7 +727,22 @@ def implems_cmp():
 
 ######implem cmp##########
 
+######################SELECT#########################
 
+
+def selectBarPLot():
+    
+    implems = ['picoquic','picoquic_patched']
+    cpu_utilisation = [70,100]
+    plt.ylabel("CPU utilisation (%)")
+    plt.bar(implems,cpu_utilisation)
+    plt.grid(True)
+    plt.ylim(bottom=0)
+    
+    plt.savefig("../plots/select_bar_cpu_utilisation.pdf")
+
+
+#####################SELECT##########################
 
 
 if __name__ == "__main__":
@@ -783,5 +803,8 @@ if __name__ == "__main__":
     # batchingTX_fixedRX64_plot()
     # batchingRX_fixedTX64_plot()
     
-    RSS_PLOT_BAR()
-    RSS_PLOT_BAR_X()
+    # RSS_PLOT_BAR()
+    # RSS_PLOT_BAR_X()
+    #selectBarPLot()
+    
+    throughput_comparison_interop_plot_box()
