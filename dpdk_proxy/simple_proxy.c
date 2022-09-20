@@ -286,6 +286,16 @@ relay_job(__rte_unused void *arg)
                 rte_eth_tx_buffer(portid, qid, tx_buffer, pkts_burst[i]);
             }
             else{
+
+#if RTE_VERSION < RTE_VERSION_NUM(21, 11, 0, 0)
+                printf("unknown mac : %x:%x:%x:%x:%x:%x\n",
+                eth_hdr->s_addr.addr_bytes[0],
+                eth_hdr->s_addr.addr_bytes[1],
+                eth_hdr->s_addr.addr_bytes[2],
+                eth_hdr->s_addr.addr_bytes[3],
+                eth_hdr->s_addr.addr_bytes[4],
+                eth_hdr->s_addr.addr_bytes[5]);
+#else
                 printf("unknown mac : %x:%x:%x:%x:%x:%x\n",
                 eth_hdr->src_addr.addr_bytes[0],
                 eth_hdr->src_addr.addr_bytes[1],
@@ -293,6 +303,7 @@ relay_job(__rte_unused void *arg)
                 eth_hdr->src_addr.addr_bytes[3],
                 eth_hdr->src_addr.addr_bytes[4],
                 eth_hdr->src_addr.addr_bytes[5]);
+#endif
             }
             
         }
