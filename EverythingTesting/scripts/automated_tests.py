@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from http import client
+from pydoc import describe
 from subprocess import Popen, PIPE
 import subprocess
 
@@ -42,7 +43,7 @@ nodpdk = 'nodpdk'
 dpdk_picoquic_directory = '/home/nikita/memoire/dpdk_picoquic'
 wireguard_directory = '/home/nikita/memoire/wireguard'
 picotls_directory = '/home/nikita/memoire/picotlsClean'
-quiche_directory = '/home/nikita/memoire/quic-implems-dockers/quiche-cloudflare'
+quiche_directory = '/home/nikita/memoire/quiche'
 msquic_directory = '/home/nikita/memoire/msquic'
 
 
@@ -740,42 +741,185 @@ def wireguard_testing():
 #############Big Comparison Tests#####################
 
 def picotls_test():
-    for i in range(5):
-        server = run_command("sudo sh server.sh &>> {}/EverythingTesting/data/cmp/picotlsFair.txt".format(dpdk_picoquic_directory),serverName,picotls_directory)
+    # for setup in [""]:
+    for setup in ["taskset -c 2","taskset -c 4",""]:
+        for i in range(10):
+            clean_setup = setup.replace("taskset ","")
+            clean_setup = clean_setup.replace(" ", "-")
+            server = run_command(("sudo {} ./cli -c server.cert -k server.key 10.100.0.2 8443 -B -y aes128gcmsha256 &>> "
+                                  "{}/EverythingTesting/data/cmp/picotls_ctesting{}.txt").format(setup,dpdk_picoquic_directory,clean_setup),serverName,picotls_directory)
+            time.sleep(3)
+            client = run_command("sudo {} ./cli 10.100.0.2 -B 8443 -y aes128gcmsha256".format(setup),clientName,picotls_directory)
+            time.sleep(30)
+            killer1 = run_command("sudo kill $(pidof cli)",clientName,dpdk_picoquic_directory)
+            killer1.wait()
+            killer2 = run_command("sudo kill $(pidof cli)",serverName,dpdk_picoquic_directory)
+            killer2.wait()
+            time.sleep(5)
+            
+
+def picotls_LRO_TSO_test():
+    
+    # cmd = run_command("sudo ethtool -K ens1f0 lro off",serverName,dpdk_picoquic_directory)
+    # cmd.wait()
+    # cmd = run_command("sudo ethtool -K ens1f0 lro off",clientName,dpdk_picoquic_directory)
+    # cmd.wait()
+    # for i in range(10):
+    #     server = run_command(("sudo ./cli -c server.cert -k server.key 10.100.0.2 8443 -B -y aes128gcmsha256 &>> "
+    #                               "{}/EverythingTesting/data/cmp/picotls_ctesting_no_LRO.txt").format(dpdk_picoquic_directory),serverName,picotls_directory)
+    #     time.sleep(3)
+    #     client = run_command("sudo ./cli 10.100.0.2 -B 8443 -y aes128gcmsha256",clientName,picotls_directory)
+    #     time.sleep(30)
+    #     killer1 = run_command("sudo kill $(pidof cli)",clientName,dpdk_picoquic_directory)
+    #     killer1.wait()
+    #     killer2 = run_command("sudo kill $(pidof cli)",serverName,dpdk_picoquic_directory)
+    #     killer2.wait()
+    #     time.sleep(5)
+        
+    # cmd = run_command("sudo ethtool -K ens1f0 tso off",serverName,dpdk_picoquic_directory)
+    # cmd.wait()
+    # cmd = run_command("sudo ethtool -K ens1f0 tso off",clientName,dpdk_picoquic_directory)
+    # cmd.wait()
+    
+    # for i in range(10):
+    #     server = run_command(("sudo ./cli -c server.cert -k server.key 10.100.0.2 8443 -B -y aes128gcmsha256 &>> "
+    #                               "{}/EverythingTesting/data/cmp/picotls_ctesting_no_LRO_no_TSO.txt").format(dpdk_picoquic_directory),serverName,picotls_directory)
+    #     time.sleep(3)
+    #     client = run_command("sudo ./cli 10.100.0.2 -B 8443 -y aes128gcmsha256",clientName,picotls_directory)
+    #     time.sleep(30)
+    #     killer1 = run_command("sudo kill $(pidof cli)",clientName,dpdk_picoquic_directory)
+    #     killer1.wait()
+    #     killer2 = run_command("sudo kill $(pidof cli)",serverName,dpdk_picoquic_directory)
+    #     killer2.wait()
+    #     time.sleep(5)
+    
+    # cmd = run_command("sudo ethtool -K ens1f0 gso off",serverName,dpdk_picoquic_directory)
+    # cmd.wait()
+    # cmd = run_command("sudo ethtool -K ens1f0 gso off",clientName,dpdk_picoquic_directory)
+    # cmd.wait()
+    
+    # for i in range(10):
+    #     server = run_command(("sudo ./cli -c server.cert -k server.key 10.100.0.2 8443 -B -y aes128gcmsha256 &>> "
+    #                               "{}/EverythingTesting/data/cmp/picotls_ctesting_no_LRO_no_TSO_no_GSO.txt").format(dpdk_picoquic_directory),serverName,picotls_directory)
+    #     time.sleep(3)
+    #     client = run_command("sudo ./cli 10.100.0.2 -B 8443 -y aes128gcmsha256",clientName,picotls_directory)
+    #     time.sleep(30)
+    #     killer1 = run_command("sudo kill $(pidof cli)",clientName,dpdk_picoquic_directory)
+    #     killer1.wait()
+    #     killer2 = run_command("sudo kill $(pidof cli)",serverName,dpdk_picoquic_directory)
+    #     killer2.wait()
+    #     time.sleep(5)
+        
+    cmd = run_command("sudo ethtool -K ens1f0 gro off",serverName,dpdk_picoquic_directory)
+    cmd.wait()
+    cmd = run_command("sudo ethtool -K ens1f0 gro off",clientName,dpdk_picoquic_directory)
+    cmd.wait()
+    
+    
+    for i in range(10):
+        server = run_command(("sudo ./cli -c server.cert -k server.key 10.100.0.2 8443 -B -y aes128gcmsha256 &>> "
+                                  "{}/EverythingTesting/data/cmp/picotls_ctesting_no_GRO.txt").format(dpdk_picoquic_directory),serverName,picotls_directory)
         time.sleep(3)
-        client = run_command("sudo sh client.sh",clientName,picotls_directory)
+        client = run_command("sudo ./cli 10.100.0.2 -B 8443 -y aes128gcmsha256",clientName,picotls_directory)
         time.sleep(30)
         killer1 = run_command("sudo kill $(pidof cli)",clientName,dpdk_picoquic_directory)
         killer1.wait()
         killer2 = run_command("sudo kill $(pidof cli)",serverName,dpdk_picoquic_directory)
         killer2.wait()
-        time.sleep(5)    
+        time.sleep(5)
+    
+    
+def reset_nics():
+    cmd = "sudo ethtool -K ens1f0 lro on && sudo ethtool -K ens1f0 tso on && sudo ethtool -K ens1f0 gro on && sudo ethtool -K ens1f0 gso on"
+    run_cmd = run_command(cmd, clientName,quiche_directory)
+    run_cmd.wait()
+    run_cmd = run_command(cmd, serverName,quiche_directory)
+    run_cmd.wait()
+
+def picotls_full_testing_test():
+    visited = []
+    reset_nics()
+    for param1 in ["lro","gro","gso","tso"]:
+        for param2 in ["lro","gro","gso","tso"]:
+            for param3 in ["lro","gro","gso","tso"]:
+                for param4 in ["lro","gro","gso","tso"]:
+                    params = [param1, param2, param3, param4]
+                    params = list(set(params))
+                    params.sort()
+                    params_str = ' '.join(params)
+                    if params_str not in visited:
+                        visited.append(params_str)
+                        description = ''
+                        for p in params:
+                            description += ("_no" + p)
+                            cmd = run_command("sudo ethtool -K ens1f0 {} off".format(p), clientName,quiche_directory)
+                            cmd.wait()
+                            cmd = run_command("sudo ethtool -K ens1f0 {} off".format(p), serverName,quiche_directory)
+                            cmd.wait()
+                        for i in range(5):
+                            server = run_command(("sudo ./cli -c server.cert -k server.key 10.100.0.2 8443 -B -y aes128gcmsha256 &>> "
+                                                    "{}/EverythingTesting/data/cmp/picotls/picotls_ctesting{}.txt").format(dpdk_picoquic_directory,description),serverName,picotls_directory)
+                            time.sleep(3)
+                            client = run_command("sudo ./cli 10.100.0.2 -B 8443 -y aes128gcmsha256",clientName,picotls_directory)
+                            time.sleep(30)
+                            killer1 = run_command("sudo kill $(pidof cli)",clientName,dpdk_picoquic_directory)
+                            killer1.wait()
+                            killer2 = run_command("sudo kill $(pidof cli)",serverName,dpdk_picoquic_directory)
+                            killer2.wait()
+                            time.sleep(5)
+                    reset_nics()
+                    
+
+                        
+
 def quiche_test():
-    for i in range(5):
-        server = run_command("sh server.sh",serverName,quiche_directory)
-        time.sleep(3)
-        client = run_command("sh client.sh >> {}/EverythingTesting/data/cmp/quicheFair.txt".format(dpdk_picoquic_directory),clientName,quiche_directory)
-        client.wait()
-        clean_everything()
-        time.sleep(3)
+    for setup in ["taskset -c 2","taskset -c 4",""]:
+    # for setup in [""]:
+    # for setup in ["-c 0,16"]:
+        for i in range(5):
+            server = run_command("sudo {} ./target/release/examples/http3-server -p 4445 -k cert.key -c cert.crt".format(setup),serverName,quiche_directory)
+            time.sleep(5)
+            
+            clean_setup = setup.replace("taskset ","")
+            clean_setup = clean_setup.replace(" ", "-")
+            
+            client = run_command("sudo {} ./target/release/examples/http3-client -G 10000000000 -X keys.log 10.100.0.2 4445 >> {}/EverythingTesting/data/cmp/quiche_ctesting{}.txt"
+                                 .format(setup,dpdk_picoquic_directory,clean_setup),clientName,quiche_directory)
+            client.wait()
+            killer = run_command("sudo kill $(pidof http3-server) >> /dev/null",serverName,dpdk_picoquic_directory)
+            killer.wait()
+            time.sleep(5)
     
 def picoquic_test():
-    for i in range(3):
-        server = run_command("sh exec_scripts/server_nodpdk.sh",serverName,dpdk_picoquic_directory)
-        time.sleep(3)
-        client = run_command("sh exec_scripts/client_nodpdk.sh >> {}/EverythingTesting/data/cmp/picoquicFair.txt".format(dpdk_picoquic_directory),clientName,dpdk_picoquic_directory)
-        client.wait()
-        clean_everything()
-        time.sleep(3)
+    for setup in ["taskset -c 2","taskset -c 4",""]:
+    #for setup in ["-c 2","-c 4","-c 4,6"]:
+        for i in range(15):
+            server = run_command("sudo LD_LIBRARY_PATH=$LD_LIBRARY_PATH {} ./dpdk_picoquicdemo --nodpdk -p 4443 -1"
+                                 .format(setup),serverName,dpdk_picoquic_directory)
+            time.sleep(5)
+            clean_setup = setup.replace("taskset ","")
+            clean_setup = clean_setup.replace(" ", "-")
+            client = run_command(("sudo LD_LIBRARY_PATH=$LD_LIBRARY_PATH {} ./dpdk_picoquicdemo --nodpdk -D 10.100.0.2 4443 /20000000000 >> " 
+                                  "{}/EverythingTesting/data/cmp/picoquic_ctesting{}.txt").format(setup, dpdk_picoquic_directory,clean_setup),
+                                 clientName,dpdk_picoquic_directory)
+            client.wait()
+            time.sleep(5)
     
 def msquic_test():
-    for i in range(5):
-        server = run_command("sh server.sh",serverName,msquic_directory)
-        time.sleep(3)
-        client = run_command("sh client.sh >> {}/EverythingTesting/data/cmp/msquicFair.txt".format(dpdk_picoquic_directory),clientName,msquic_directory)
-        client.wait()
-        clean_everything()
-        time.sleep(3)
+    for setup in [""]:
+    # for setup in [""]:
+        for i in range(15):
+            server = run_command("sudo {} ./artifacts/bin/linux/x64_Release_openssl/secnetperf -cipher:1 -bind:10.100.0.2"
+                                 .format(setup),serverName,msquic_directory)
+            time.sleep(5)
+            clean_setup = setup.replace("taskset ","")
+            clean_setup = clean_setup.replace(" ", "-")
+            client = run_command("sudo {} ./artifacts/bin/linux/x64_Release_openssl/secnetperf -cipher:1 -TestName:throughput -target:10.100.0.2 -p 4443 -download:20000000000 >> {}/EverythingTesting/data/cmp/msquic_ctesting_no_GRO{}.txt".
+                                 format(setup, dpdk_picoquic_directory,clean_setup),clientName,msquic_directory)
+            client.wait()
+            killer = run_command("sudo kill $(pidof secnetperf) >> /dev/null",serverName,dpdk_picoquic_directory)
+            killer.wait()
+            time.sleep(3)
     
 
 #############Big Comparison Tests#####################
@@ -800,6 +944,21 @@ def interop_test():
         server = run_command("sh exec_scripts/server.sh",serverName,dpdk_picoquic_directory)
         time.sleep(3)
         client = run_command("sh exec_scripts/newClient.sh >> {}/EverythingTesting/data/cmp/clientDPDKInterop.txt".format(dpdk_picoquic_directory),clientName,dpdk_picoquic_directory)
+        client.wait()
+        time.sleep(3)
+        
+def interop_test_2():
+    for i in range(5):
+        server = run_command("sh exec_scripts/newServer.sh",serverName,dpdk_picoquic_directory)
+        time.sleep(3)
+        client = run_command("sh exec_scripts/client.sh >> {}/EverythingTesting/data/cmp/clientNoDPDKInteropNoPatch.txt".format(dpdk_picoquic_directory),clientName,dpdk_picoquic_directory)
+        client.wait()
+        time.sleep(3)
+        
+    for i in range(5):
+        server = run_command("sh exec_scripts/server.sh",serverName,dpdk_picoquic_directory)
+        time.sleep(3)
+        client = run_command("sh exec_scripts/newClient.sh >> {}/EverythingTesting/data/cmp/clientDPDKInteropNoPatch.txt".format(dpdk_picoquic_directory),clientName,dpdk_picoquic_directory)
         client.wait()
         time.sleep(3)
         
@@ -852,7 +1011,14 @@ if __name__ == "__main__":
     # test_RSS_8_balance()
     # test_RSS_8_balance_X()
     
-    interop_test()
-        
+    # interop_test_2()
     
-
+    #quiche_test()
+    #msquic_test()
+    # picoquic_test()
+    #picotls_test()
+    #picoquic_test()
+    #picotls_test()
+    #picotls_LRO_TSO_test()
+    #msquic_test()
+    picotls_full_testing_test()

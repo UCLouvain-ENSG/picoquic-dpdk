@@ -1,0 +1,60 @@
+Started!
+
+Result: 20000000000 bytes @ 5027035 kbps (31827.906 ms).
+App Main returning status 0
+Started!
+
+Result: 20000000000 bytes @ 4972832 kbps (32174.822 ms).
+App Main returning status 0
+Started!
+
+Result: 20000000000 bytes @ 4985928 kbps (32090.309 ms).
+App Main returning status 0
+Started!
+
+Result: 20000000000 bytes @ 5006945 kbps (31955.609 ms).
+App Main returning status 0
+Started!
+
+Result: 20000000000 bytes @ 4968048 kbps (32205.805 ms).
+App Main returning status 0
+Started!
+
+Result: 20000000000 bytes @ 5016042 kbps (31897.654 ms).
+App Main returning status 0
+Started!
+
+Result: 20000000000 bytes @ 5525801 kbps (28955.073 ms).
+App Main returning status 0
+Started!
+
+Result: 20000000000 bytes @ 5525504 kbps (28956.634 ms).
+App Main returning status 0
+Started!
+
+Result: 20000000000 bytes @ 5472138 kbps (29239.025 ms).
+App Main returning status 0
+Started!
+
+Result: 20000000000 bytes @ 5548545 kbps (28836.386 ms).
+App Main returning status 0
+Started!
+
+Result: 20000000000 bytes @ 5512282 kbps (29026.088 ms).
+App Main returning status 0
+Started!
+
+Result: 20000000000 bytes @ 5131586 kbps (31179.440 ms).
+App Main returning status 0
+Started!
+
+Result: 20000000000 bytes @ 5517171 kbps (29000.367 ms).
+App Main returning status 0
+Started!
+
+Result: 20000000000 bytes @ 4987695 kbps (32078.943 ms).
+App Main returning status 0
+Started!
+
+Result: 20000000000 bytes @ 5536840 kbps (28897.345 ms).
+App Main returning status 0

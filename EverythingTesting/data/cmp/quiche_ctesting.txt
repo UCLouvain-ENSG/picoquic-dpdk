@@ -1,0 +1,84 @@
+https://10.100.0.2:4445/10000000000
+inside
+got 10000000000 bytes in total
+18892.315 ms
+goodput : 4234.526049348638 Mbps
+done!!!
+https://10.100.0.2:4445/10000000000
+inside
+got 10000000000 bytes in total
+20130.926 ms
+goodput : 3973.985101331156 Mbps
+done!!!
+https://10.100.0.2:4445/10000000000
+inside
+got 10000000000 bytes in total
+19889.837 ms
+goodput : 4022.1546310309127 Mbps
+done!!!
+https://10.100.0.2:4445/10000000000
+inside
+got 10000000000 bytes in total
+26524.015 ms
+goodput : 3016.1346236608597 Mbps
+done!!!
+https://10.100.0.2:4445/10000000000
+inside
+got 10000000000 bytes in total
+19885.724 ms
+goodput : 4022.9865404950806 Mbps
+done!!!
+https://10.100.0.2:4445/10000000000
+inside
+got 10000000000 bytes in total
+20056.499 ms
+goodput : 3988.7320314477615 Mbps
+done!!!
+https://10.100.0.2:4445/10000000000
+inside
+got 10000000000 bytes in total
+19166.226 ms
+goodput : 4174.009009389746 Mbps
+done!!!
+https://10.100.0.2:4445/10000000000
+inside
+got 10000000000 bytes in total
+26336.919 ms
+goodput : 3037.561075386229 Mbps
+done!!!
+https://10.100.0.2:4445/10000000000
+inside
+got 10000000000 bytes in total
+20239.547 ms
+goodput : 3952.6576360627046 Mbps
+done!!!
+https://10.100.0.2:4445/10000000000
+inside
+got 10000000000 bytes in total
+19326.622 ms
+goodput : 4139.367966114306 Mbps
+done!!!
+https://10.100.0.2:4445/10000000000
+inside
+got 10000000000 bytes in total
+22006.527 ms
+goodput : 3635.2851133665936 Mbps
+done!!!
+https://10.100.0.2:4445/10000000000
+inside
+got 10000000000 bytes in total
+20176.975 ms
+goodput : 3964.915454373116 Mbps
+done!!!
+https://10.100.0.2:4445/10000000000
+inside
+got 10000000000 bytes in total
+18910.136 ms
+goodput : 4230.535412331249 Mbps
+done!!!
+https://10.100.0.2:4445/10000000000
+inside
+got 10000000000 bytes in total
+20927.391 ms
+goodput : 3822.7412103114048 Mbps
+done!!!

@@ -1,0 +1,30 @@
+https://10.100.0.2:4445/10000000000
+inside
+got 10000000000 bytes in total
+26575.693 ms
+goodput : 3010.2695722741832 Mbps
+done!!!
+https://10.100.0.2:4445/10000000000
+inside
+got 10000000000 bytes in total
+20287.891 ms
+goodput : 3943.238851194538 Mbps
+done!!!
+https://10.100.0.2:4445/10000000000
+inside
+got 10000000000 bytes in total
+18656.122 ms
+goodput : 4288.136623463332 Mbps
+done!!!
+https://10.100.0.2:4445/10000000000
+inside
+got 10000000000 bytes in total
+19149.382 ms
+goodput : 4177.6805120917215 Mbps
+done!!!
+https://10.100.0.2:4445/10000000000
+inside
+got 10000000000 bytes in total
+18636.94 ms
+goodput : 4292.550171862978 Mbps
+done!!!

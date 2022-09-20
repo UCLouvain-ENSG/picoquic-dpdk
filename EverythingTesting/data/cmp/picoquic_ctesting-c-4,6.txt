@@ -1,0 +1,280 @@
+Starting Picoquic (v1.01) connection to server = 10.100.0.2, port = 4443
+Waiting for packets.
+Client port (AF=2): 59704.
+Negotiated ALPN: h3
+Almost ready!
+
+Connection established. Version = 1, I-CID: c76a4dee6da21626, verified: 1
+Opening stream 0 to GET /20000000000
+Stream 0 ended after -1474836480 bytes
+All done, Closing the connection.
+Received a request to close the connection.
+The connection is closed!
+Quic Bit was greased by the client.
+Quic Bit was greased by the server.
+ECN was received (ect0: 14263225, ect1: 0, ce: 0).
+ECN was acknowledged (ect0: 39722, ect1: 0, ce: 0).
+Received 20000000025 bytes in 32.336517 seconds, 4947.966418 Mbps.
+max_data_local: 60003145728
+max_max_stream_data_local: 60000003603
+max_data_remote: 1048576
+max_max_stream_data_remote: 2048
+ack_delay_remote: 1000 ... 1000
+max_ack_gap_remote: 64
+ack_delay_local: 1233 ... 25000
+max_ack_gap_local: 2
+max_mtu_sent: 1440
+max_mtu_received: 1440
+Client exit with code = 0
+Starting Picoquic (v1.01) connection to server = 10.100.0.2, port = 4443
+Waiting for packets.
+Client port (AF=2): 40853.
+Negotiated ALPN: h3
+Almost ready!
+
+Connection established. Version = 1, I-CID: 7e5166d3f2fcbe58, verified: 1
+Opening stream 0 to GET /20000000000
+Stream 0 ended after -1474836480 bytes
+All done, Closing the connection.
+Received a request to close the connection.
+The connection is closed!
+Quic Bit was greased by the client.
+Quic Bit was greased by the server.
+ECN was received (ect0: 14263225, ect1: 0, ce: 0).
+ECN was acknowledged (ect0: 39662, ect1: 0, ce: 0).
+Received 20000000025 bytes in 32.459010 seconds, 4929.293906 Mbps.
+max_data_local: 60003145728
+max_max_stream_data_local: 60000003603
+max_data_remote: 1048576
+max_max_stream_data_remote: 2048
+ack_delay_remote: 1000 ... 1000
+max_ack_gap_remote: 64
+ack_delay_local: 1247 ... 25000
+max_ack_gap_local: 3
+max_mtu_sent: 1440
+max_mtu_received: 1440
+Client exit with code = 0
+Starting Picoquic (v1.01) connection to server = 10.100.0.2, port = 4443
+Waiting for packets.
+Client port (AF=2): 36576.
+Negotiated ALPN: h3
+Almost ready!
+
+Connection established. Version = 1, I-CID: f97e7fd9557ce84d, verified: 1
+Opening stream 0 to GET /20000000000
+Stream 0 ended after -1474836480 bytes
+All done, Closing the connection.
+Received a request to close the connection.
+The connection is closed!
+Quic Bit was greased by the client.
+Quic Bit was greased by the server.
+ECN was received (ect0: 14263225, ect1: 0, ce: 0).
+ECN was acknowledged (ect0: 39828, ect1: 0, ce: 0).
+Received 20000000025 bytes in 32.434364 seconds, 4933.039544 Mbps.
+max_data_local: 60003145728
+max_max_stream_data_local: 60000003603
+max_data_remote: 1048576
+max_max_stream_data_remote: 2048
+ack_delay_remote: 1000 ... 1000
+max_ack_gap_remote: 64
+ack_delay_local: 1238 ... 25000
+max_ack_gap_local: 3
+max_mtu_sent: 1440
+max_mtu_received: 1440
+Client exit with code = 0
+Starting Picoquic (v1.01) connection to server = 10.100.0.2, port = 4443
+Waiting for packets.
+Client port (AF=2): 55792.
+Negotiated ALPN: h3
+Almost ready!
+
+Connection established. Version = 1, I-CID: 805517f9b4982d54, verified: 1
+Opening stream 0 to GET /20000000000
+Stream 0 ended after -1474836480 bytes
+All done, Closing the connection.
+Received a request to close the connection.
+The connection is closed!
+Quic Bit was greased by the client.
+Quic Bit was greased by the server.
+ECN was received (ect0: 14263226, ect1: 0, ce: 0).
+ECN was acknowledged (ect0: 40211, ect1: 0, ce: 0).
+Received 20000000025 bytes in 32.575348 seconds, 4911.689668 Mbps.
+max_data_local: 60003145728
+max_max_stream_data_local: 60000003603
+max_data_remote: 1048576
+max_max_stream_data_remote: 2048
+ack_delay_remote: 1000 ... 1000
+max_ack_gap_remote: 64
+ack_delay_local: 1228 ... 25000
+max_ack_gap_local: 2
+max_mtu_sent: 1440
+max_mtu_received: 1440
+Client exit with code = 0
+Starting Picoquic (v1.01) connection to server = 10.100.0.2, port = 4443
+Waiting for packets.
+Client port (AF=2): 59232.
+Negotiated ALPN: h3
+Almost ready!
+
+Connection established. Version = 1, I-CID: cc2acd8f3e14833, verified: 1
+Opening stream 0 to GET /20000000000
+Stream 0 ended after -1474836480 bytes
+All done, Closing the connection.
+Received a request to close the connection.
+The connection is closed!
+Quic Bit was greased by the client.
+Quic Bit was greased by the server.
+ECN was received (ect0: 14263222, ect1: 0, ce: 0).
+ECN was acknowledged (ect0: 38401, ect1: 0, ce: 0).
+Received 20000000025 bytes in 32.667250 seconds, 4897.871728 Mbps.
+max_data_local: 60003145728
+max_max_stream_data_local: 60000003603
+max_data_remote: 1048576
+max_max_stream_data_remote: 2048
+ack_delay_remote: 1000 ... 1000
+max_ack_gap_remote: 64
+ack_delay_local: 1299 ... 25000
+max_ack_gap_local: 2
+max_mtu_sent: 1440
+max_mtu_received: 1440
+Client exit with code = 0
+Starting Picoquic (v1.01) connection to server = 10.100.0.2, port = 4443
+Waiting for packets.
+Client port (AF=2): 60284.
+Negotiated ALPN: h3
+Almost ready!
+
+Connection established. Version = 1, I-CID: 24448ce0ae35ad07, verified: 1
+Opening stream 0 to GET /20000000000
+Stream 0 ended after -1474836480 bytes
+All done, Closing the connection.
+Received a request to close the connection.
+The connection is closed!
+Quic Bit was greased by the client.
+Quic Bit was greased by the server.
+ECN was received (ect0: 14263225, ect1: 0, ce: 0).
+ECN was acknowledged (ect0: 39796, ect1: 0, ce: 0).
+Received 20000000025 bytes in 32.504891 seconds, 4922.336156 Mbps.
+max_data_local: 60003145728
+max_max_stream_data_local: 60000003603
+max_data_remote: 1048576
+max_max_stream_data_remote: 2048
+ack_delay_remote: 1000 ... 1000
+max_ack_gap_remote: 64
+ack_delay_local: 1242 ... 25000
+max_ack_gap_local: 3
+max_mtu_sent: 1440
+max_mtu_received: 1440
+Client exit with code = 0
+Starting Picoquic (v1.01) connection to server = 10.100.0.2, port = 4443
+Waiting for packets.
+Client port (AF=2): 46846.
+Negotiated ALPN: h3
+Almost ready!
+
+Connection established. Version = 1, I-CID: acb792f6789e9f5e, verified: 1
+Opening stream 0 to GET /20000000000
+Stream 0 ended after -1474836480 bytes
+All done, Closing the connection.
+Received a request to close the connection.
+The connection is closed!
+Quic Bit was greased by the client.
+Quic Bit was greased by the server.
+ECN was received (ect0: 14263225, ect1: 0, ce: 0).
+ECN was acknowledged (ect0: 39948, ect1: 0, ce: 0).
+Received 20000000025 bytes in 32.532495 seconds, 4918.159526 Mbps.
+max_data_local: 60003145728
+max_max_stream_data_local: 60000003603
+max_data_remote: 1048576
+max_max_stream_data_remote: 2048
+ack_delay_remote: 1000 ... 1000
+max_ack_gap_remote: 64
+ack_delay_local: 1240 ... 25000
+max_ack_gap_local: 3
+max_mtu_sent: 1440
+max_mtu_received: 1440
+Client exit with code = 0
+Starting Picoquic (v1.01) connection to server = 10.100.0.2, port = 4443
+Waiting for packets.
+Client port (AF=2): 43076.
+Negotiated ALPN: h3
+Almost ready!
+
+Connection established. Version = 1, I-CID: 64c2a6efe24c0cfc, verified: 1
+Opening stream 0 to GET /20000000000
+Stream 0 ended after -1474836480 bytes
+All done, Closing the connection.
+Received a request to close the connection.
+The connection is closed!
+Quic Bit was greased by the client.
+Quic Bit was greased by the server.
+ECN was received (ect0: 14263227, ect1: 0, ce: 0).
+ECN was acknowledged (ect0: 40774, ect1: 0, ce: 0).
+Received 20000000025 bytes in 32.516551 seconds, 4920.571072 Mbps.
+max_data_local: 60003145728
+max_max_stream_data_local: 60000003603
+max_data_remote: 1048576
+max_max_stream_data_remote: 2048
+ack_delay_remote: 1000 ... 1000
+max_ack_gap_remote: 64
+ack_delay_local: 1218 ... 25000
+max_ack_gap_local: 3
+max_mtu_sent: 1440
+max_mtu_received: 1440
+Client exit with code = 0
+Starting Picoquic (v1.01) connection to server = 10.100.0.2, port = 4443
+Waiting for packets.
+Client port (AF=2): 57208.
+Negotiated ALPN: h3
+Almost ready!
+
+Connection established. Version = 1, I-CID: bf3c596256479b8e, verified: 1
+Opening stream 0 to GET /20000000000
+Stream 0 ended after -1474836480 bytes
+All done, Closing the connection.
+Received a request to close the connection.
+The connection is closed!
+Quic Bit was greased by the client.
+Quic Bit was greased by the server.
+ECN was received (ect0: 14263225, ect1: 0, ce: 0).
+ECN was acknowledged (ect0: 39719, ect1: 0, ce: 0).
+Received 20000000025 bytes in 32.366249 seconds, 4943.421161 Mbps.
+max_data_local: 60003145728
+max_max_stream_data_local: 60000003603
+max_data_remote: 1048576
+max_max_stream_data_remote: 2048
+ack_delay_remote: 1000 ... 1000
+max_ack_gap_remote: 64
+ack_delay_local: 1236 ... 25000
+max_ack_gap_local: 3
+max_mtu_sent: 1440
+max_mtu_received: 1440
+Client exit with code = 0
+Starting Picoquic (v1.01) connection to server = 10.100.0.2, port = 4443
+Waiting for packets.
+Client port (AF=2): 55577.
+Negotiated ALPN: h3
+Almost ready!
+
+Connection established. Version = 1, I-CID: 16a150421e47d0b, verified: 1
+Opening stream 0 to GET /20000000000
+Stream 0 ended after -1474836480 bytes
+All done, Closing the connection.
+Received a request to close the connection.
+The connection is closed!
+Quic Bit was greased by the client.
+Quic Bit was greased by the server.
+ECN was received (ect0: 14263227, ect1: 0, ce: 0).
+ECN was acknowledged (ect0: 40875, ect1: 0, ce: 0).
+Received 20000000025 bytes in 32.473002 seconds, 4927.169967 Mbps.
+max_data_local: 60003145728
+max_max_stream_data_local: 60000003603
+max_data_remote: 1048576
+max_max_stream_data_remote: 2048
+ack_delay_remote: 1000 ... 1000
+max_ack_gap_remote: 64
+ack_delay_local: 1216 ... 25000
+max_ack_gap_local: 3
+max_mtu_sent: 1440
+max_mtu_received: 1440
+Client exit with code = 0

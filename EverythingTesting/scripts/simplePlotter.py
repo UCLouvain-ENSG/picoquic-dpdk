@@ -1,5 +1,6 @@
 from ast import keyword
 from sqlite3 import converters
+from turtle import color
 import matplotlib.pyplot as plt
 import re
 import numpy as np
@@ -11,12 +12,16 @@ goodput_index = 2
 nb_pkt_index = 7
 perf_tp_index = 6
 
+msquic_index = 4
+quiche_index = 2
+picotls_index = 6
 
 class ItemToPlot:
-    def __init__(self, label,getDataFunction,args):
+    def __init__(self, label,getDataFunction,args,color=None):
         self.label = label
         self.getDataFunction = getDataFunction
         self.args = args
+        self.color = color
         
     def getData(self):
         return self.getDataFunction(*self.args)
@@ -93,13 +98,50 @@ def comparison_plot_bar(items,title,yLabel,outputFileName):
     plt.bar(labels,data)
     plt.grid(True)
     plt.savefig(outputFileName)
-    
-def comparison_plot_box(items,title,yLabel,outputFileName, xLabel = None, yTicks = None):
+   
+def set_box_color(bp, color):
+    plt.setp(bp['boxes'], color=color)
+    plt.setp(bp['whiskers'], color=color)
+    plt.setp(bp['caps'], color=color)
+    plt.setp(bp['medians'], color=color)
+     
+def comparison_plot_box(items,title,yLabel,outputFileName, xLabel = None, yTicks = None,custom_colors = False):
     print(xLabel)
     data = [i.getData() for i in items]
     labels = [i.label for i in items]
+    #for cmp graph
+    BIG_SIZE = 12
+    plt.rc('font', size=BIG_SIZE)          # controls default text sizes
+    plt.rc('axes', titlesize=BIG_SIZE)     # fontsize of the axes title
+    plt.rc('axes', labelsize=BIG_SIZE)    # fontsize of the x and y labels
+    plt.rc('xtick', labelsize=8)    # fontsize of the tick labels
+    plt.rc('ytick', labelsize=BIG_SIZE)    # fontsize of the tick labels
+    
     fig, ax = plt.subplots()
-    ax.boxplot(data,showfliers=False)
+    box = ax.boxplot(data,showfliers=False,patch_artist=False)
+    
+    
+    if custom_colors:
+        colors = [i.color for i in items]
+        plt.plot([], c="blue", label="picoquic")
+        plt.plot([], c='red', label="picoquic-dpdk")
+        plt.plot([], c='orange', label="msquic")
+        plt.plot([], c='green', label="quiche")
+        plt.plot([], c='magenta', label="picotls")
+        
+        plt.legend(fontsize=8) 
+        colors_caps = []
+        for c in colors:
+            colors_caps.append(c)
+            colors_caps.append(c)
+        for elem in ['boxes','medians',"whiskers"]:
+            for bp_elem, color in zip(box[elem], colors):
+                plt.setp(bp_elem, color = color)
+                
+        for elem in ['caps']:
+            for bp_elem, color in zip(box[elem], colors_caps):
+                plt.setp(bp_elem, color = color)
+            
     ax.set_xticklabels(labels)
     ax.set_title(title)
     ax.set_ylabel(yLabel)
@@ -108,8 +150,13 @@ def comparison_plot_box(items,title,yLabel,outputFileName, xLabel = None, yTicks
         ax.set_xlabel(xLabel)
     if yTicks != None:
         plt.yticks(yTicks)
+    
+    
     plt.grid(True)
-    plt.savefig(outputFileName,format = 'pdf')
+    #plt.show()
+    # plt.show() # show it here (important, if done before you will get blank picture)
+    # fig.set_size_inches(20, 8) # set figure's size manually to your full screen (32x18)
+    fig.savefig(outputFileName,bbox_inches='tight',format = 'pdf')
     plt.figure().clear()
     plt.close()
     plt.cla()
@@ -117,11 +164,7 @@ def comparison_plot_box(items,title,yLabel,outputFileName, xLabel = None, yTicks
     
     
     
-def set_box_color(bp, color):
-    plt.setp(bp['boxes'], color=color)
-    plt.setp(bp['whiskers'], color=color)
-    plt.setp(bp['caps'], color=color)
-    plt.setp(bp['medians'], color=color)
+
     
 def comparison_plot_box_superpossed(items1,items2, title,yLabel,outputFileName, label1, label2, xLabel = None, yTicks = None):
     
@@ -158,7 +201,7 @@ def comparison_plot_box_superpossed(items1,items2, title,yLabel,outputFileName, 
     plt.cla()
     plt.clf()
     
-def comparison_plot_box_n_superpossed(groups,ylabel,xlabel,xticksLabels,filename):
+def comparison_plot_box_n_superpossed(groups,ylabel,xlabel,xticksLabels,legendLabels,filename):
     
     
     data_groups  = []
@@ -167,31 +210,27 @@ def comparison_plot_box_n_superpossed(groups,ylabel,xlabel,xticksLabels,filename
         for item in group:
             data.append(item.getData())
         data_groups.append(data)
-    print(data_groups)
     colors = ['red','green','blue','purple']
     
-    # we compare the performances of the 4 individuals within the same set of 3 settings 
     
+    print(len(data_groups))
     # --- Labels for your data:
-    labels_list = [str(i) for i in range(100,1300,100)]
+    labels_list = xticksLabels
     width       = 1/len(labels_list)
     xlocations  = [ x*((1+ len(data_groups))*width) for x in range(len(data_groups[0]))]
     ymin        = min ( [ val  for dg in data_groups  for data in dg for val in data ] )
     ymax        = max ( [ val  for dg in data_groups  for data in dg for val in data ])
-
     ax = plt.gca()
     ax.set_ylim(0,ymax+ymin)
 
     ax.grid(True)
     ax.set_axisbelow(True)
     
-    
-
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     
-    for i in range(len(xticksLabels)):
-        plt.plot([], c=colors[i], label=xticksLabels[i])
+    for i in range(len(legendLabels)):
+        plt.plot([], c=colors[i], label=legendLabels[i])
     plt.legend()
     space = len(data_groups)/2
     offset = len(data_groups)/2
@@ -211,10 +250,14 @@ def comparison_plot_box_n_superpossed(groups,ylabel,xlabel,xticksLabels,filename
     plt.xlim(first_pos-margin, last_post+margin)
     
     for dg, pos, c in zip(data_groups, group_positions, colors):
+        print("hello")
+        mylabels=['']*len(labels_list)
+        print(dg)
+        print(mylabels)
         boxes = ax.boxplot(dg, 
                     sym='',
                     labels=['']*len(labels_list),
-        #           labels=labels_list,
+                    #labels=labels_list,
                     positions=pos, 
                     widths=width, 
                     # boxprops=dict(facecolor=c),
@@ -235,11 +278,13 @@ def comparison_plot_box_n_superpossed(groups,ylabel,xlabel,xticksLabels,filename
             
         set_box_color(boxes,colors[color_counter])
         color_counter+=1
+    print("hello2")
     ax.set_xticks( xlocations )
     ax.set_xticklabels( labels_list, rotation=0 )
 
 
     plt.savefig(filename,format = 'pdf')
+    #plt.show()
     plt.figure().clear()
     plt.close()
     plt.cla()
@@ -273,18 +318,23 @@ def throughput_comparison_plot_bar():
 def throughput_comparison_plot_box():
     item1 = ItemToPlot("picoquic",get_full_data,("../data/throughputBBR_nodpdk.txt",throughput_index))
     item2 = ItemToPlot("picoquic-dpdk",get_full_data,("../data/throughputBBR_dpdk.txt",throughput_index))
-    comparison_plot_box([item1,item2],"","Throughput(Mbps)","../plots/Throughput_box.pdf")
+    comparison_plot_box([item1,item2],"","Goodput (Mbps)","../plots/Throughput_box.pdf")
     
+    
+def throughput_comparison_interop_plot_box_no_patch():
+    item1 = ItemToPlot("picoquic client \n picoquic-dpdk server",get_full_data,("../data/cmp/clientNoDPDKInteropNoPatch.txt",throughput_index,"Mbps"))
+    item2 = ItemToPlot("picoquic-dpdk client \n picoquic server",get_full_data,("../data/cmp/clientDPDKInteropNoPatch.txt",throughput_index,"Mbps"))
+    comparison_plot_box([item1,item2],"","Throughput(Mbps)","../plots/Throughput_interop_no_patch_box.pdf")
     
 def throughput_comparison_interop_plot_box():
     item1 = ItemToPlot("picoquic client \n picoquic-dpdk server",get_full_data,("../data/cmp/clientNoDPDKInterop.txt",throughput_index,"Mbps"))
     item2 = ItemToPlot("picoquic-dpdk client \n picoquic server",get_full_data,("../data/cmp/clientDPDKInterop.txt",throughput_index,"Mbps"))
-    comparison_plot_box([item1,item2],"","Throughput(Mbps)","../plots/Throughput_interop_box.pdf")
+    comparison_plot_box([item1,item2],"","Goodput (Mbps)","../plots/Throughput_interop_box.pdf")
     
 def throughput_comparison_plot_box_patched():
     item1 = ItemToPlot("picoquic",get_full_data,("../data/throughputBBR_nodpdk.txt",throughput_index))
     item2 = ItemToPlot("picoquic_patched",get_full_data,("../data/throughputBBRPatched_nodpdk.txt",throughput_index))
-    comparison_plot_box([item1,item2],"","Throughput(Mbps)","../plots/Throughput_boxPatched.pdf")
+    comparison_plot_box([item1,item2],"","Goodput (Mbps)","../plots/Throughput_boxPatched.pdf")
     
     
 def handshake_time_comparison_plot_box():
@@ -639,61 +689,61 @@ def UDP_proxy_var_sizes_forwarder():
         
 #     comparison_plot_box_superpossed(items1,items2, "" ,"Throughput (Mbps)","../plots/wireguardVsProxyTP.pdf", 'proxy','wiregard', xLabel = "payload size", yTicks = None)
     
-def prox_TCP_UDP_TP():
-    items1 = []
-    items2 = []
-    for size in range(100,1300,100):
+# def prox_TCP_UDP_TP():
+#     items1 = []
+#     items2 = []
+#     for size in range(100,1300,100):
         
-        items1.append(ItemToPlot("TCP",get_full_data_perf,("../data/proxy/proxyTCP{}.txt".format(str(size)),perf_tp_index)))
-        items2.append(ItemToPlot("UDP",get_full_data,("../data/proxy/proxyUDP{}.txt".format(str(size)),3,"final")))
+#         items1.append(ItemToPlot("TCP",get_full_data_perf,("../data/proxy/proxyTCP{}.txt".format(str(size)),perf_tp_index)))
+#         items2.append(ItemToPlot("UDP",get_full_data,("../data/proxy/proxyUDP{}.txt".format(str(size)),3,"final")))
         
-    comparison_plot_box_n_superpossed([items1,items2],'Goodput (Mbps)','payload size (bytes)',['TCP','UDP'],"../plots/TCPvsUDP_TP.pdf")
+#     comparison_plot_box_n_superpossed([items1,items2],'Goodput (Mbps)','payload size (bytes)',['TCP','UDP'],"../plots/TCPvsUDP_TP.pdf")
 
 
-def prox_TCP_vs_forwarder_TP():
-    items1 = []
-    items2 = []
-    for size in range(100,1300,100):
+# def prox_TCP_vs_forwarder_TP():
+#     items1 = []
+#     items2 = []
+#     for size in range(100,1300,100):
         
-        items1.append(ItemToPlot("proxy",get_full_data_perf,("../data/proxy/proxyTCP{}.txt".format(str(size)),perf_tp_index)))
-        items2.append(ItemToPlot("forwarder",get_full_data_perf,("../data/proxy/noproxyTCP{}.txt".format(str(size)),perf_tp_index)))
+#         items1.append(ItemToPlot("proxy",get_full_data_perf,("../data/proxy/proxyTCP{}.txt".format(str(size)),perf_tp_index)))
+#         items2.append(ItemToPlot("forwarder",get_full_data_perf,("../data/proxy/noproxyTCP{}.txt".format(str(size)),perf_tp_index)))
         
-    comparison_plot_box_n_superpossed([items1,items2],'Goodput (Mbps)','payload size (bytes)',['relay','forwarder'],"../plots/proxy_vs_forwarder_TP.pdf")
+#     comparison_plot_box_n_superpossed([items1,items2],'Goodput (Mbps)','payload size (bytes)',['relay','forwarder'],"../plots/proxy_vs_forwarder_TP.pdf")
 
-def prox_TCP_UDP_PPS():
-    items1 = []
-    items2 = []
-    for size in range(100,1300,100):
+# def prox_TCP_UDP_PPS():
+#     items1 = []
+#     items2 = []
+#     for size in range(100,1300,100):
         
-        def extractor(x,mysize=size):
-            return float(x)*1000000/8/mysize
+#         def extractor(x,mysize=size):
+#             return float(x)*1000000/8/mysize
         
-        items1.append(ItemToPlot("TCP",get_full_data_perf_nb_packets,("../data/proxy/proxyTCP{}.txt".format(str(size)),perf_tp_index,size)))
-        items2.append(ItemToPlot("UDP",get_full_data,("../data/proxy/proxyUDP{}.txt".format(str(size)),3,"final",extractor)))
+#         items1.append(ItemToPlot("TCP",get_full_data_perf_nb_packets,("../data/proxy/proxyTCP{}.txt".format(str(size)),perf_tp_index,size)))
+#         items2.append(ItemToPlot("UDP",get_full_data,("../data/proxy/proxyUDP{}.txt".format(str(size)),3,"final",extractor)))
         
-    comparison_plot_box_n_superpossed([items1,items2],'Packet per second','payload size (bytes)',['TCP','UDP'],"../plots/TCPvsUDP_PPS.pdf")
+#     comparison_plot_box_n_superpossed([items1,items2],'Packet per second','payload size (bytes)',['TCP','UDP'],"../plots/TCPvsUDP_PPS.pdf")
    
-def TCP_proxy_cmp_wireguard_TP():
-    items1 = []
-    items2 = []
-    items3 = []
-    for size in range(100,1300,100):
-        items1.append(ItemToPlot("picoquic",get_full_data_perf,("../data/proxy/proxyTCPNoDPDK{}.txt".format(str(size)),perf_tp_index)))
-        items2.append(ItemToPlot("picoquic-dpdk",get_full_data_perf,("../data/proxy/proxyTCP{}.txt".format(str(size)),perf_tp_index)))
-        items3.append(ItemToPlot("wireguard",get_full_data_perf,("../data/proxy/wireguardTCP{}.txt".format(str(size)),perf_tp_index)))
+# def TCP_proxy_cmp_wireguard_TP():
+#     items1 = []
+#     items2 = []
+#     items3 = []
+#     for size in range(100,1300,100):
+#         items1.append(ItemToPlot("picoquic",get_full_data_perf,("../data/proxy/proxyTCPNoDPDK{}.txt".format(str(size)),perf_tp_index)))
+#         items2.append(ItemToPlot("picoquic-dpdk",get_full_data_perf,("../data/proxy/proxyTCP{}.txt".format(str(size)),perf_tp_index)))
+#         items3.append(ItemToPlot("wireguard",get_full_data_perf,("../data/proxy/wireguardTCP{}.txt".format(str(size)),perf_tp_index)))
         
-    comparison_plot_box_n_superpossed([items1,items2,items3],'Goodput (Mbps)','payload size (bytes)',['picoquic','picoquic-dpdk','wireguard'],"../plots/wireguardVsProxyTP.pdf")
+#     comparison_plot_box_n_superpossed([items1,items2,items3],'Goodput (Mbps)','payload size (bytes)',['picoquic','picoquic-dpdk','wireguard'],"../plots/wireguardVsProxyTP.pdf")
 
-def TCP_proxy_cmp_wireguard_PPS():
-    items1 = []
-    items2 = []
-    items3 = []
-    for size in range(100,1300,100):
-        items1.append(ItemToPlot("picoquic",get_full_data_perf_nb_packets,("../data/proxy/proxyTCPNoDPDK{}.txt".format(str(size)),perf_tp_index,size)))
-        items2.append(ItemToPlot("picoquic-dpdk",get_full_data_perf_nb_packets,("../data/proxy/proxyTCP{}.txt".format(str(size)),perf_tp_index,size)))
-        items3.append(ItemToPlot("wireguard",get_full_data_perf_nb_packets,("../data/proxy/wireguardTCP{}.txt".format(str(size)),perf_tp_index,size)))
+# def TCP_proxy_cmp_wireguard_PPS():
+#     items1 = []
+#     items2 = []
+#     items3 = []
+#     for size in range(100,1300,100):
+#         items1.append(ItemToPlot("picoquic",get_full_data_perf_nb_packets,("../data/proxy/proxyTCPNoDPDK{}.txt".format(str(size)),perf_tp_index,size)))
+#         items2.append(ItemToPlot("picoquic-dpdk",get_full_data_perf_nb_packets,("../data/proxy/proxyTCP{}.txt".format(str(size)),perf_tp_index,size)))
+#         items3.append(ItemToPlot("wireguard",get_full_data_perf_nb_packets,("../data/proxy/wireguardTCP{}.txt".format(str(size)),perf_tp_index,size)))
         
-    comparison_plot_box_n_superpossed([items1,items2,items3],'Packet per second','payload size (bytes)',['picoquic','picoquic-dpdk','wireguard'],"../plots/wireguardVsProxyPPS.pdf")
+#     comparison_plot_box_n_superpossed([items1,items2,items3],'Packet per second','payload size (bytes)',['picoquic','picoquic-dpdk','wireguard'],["1 core","2 cores", "3 cores"],"../plots/wireguardVsProxyPPS.pdf")
     
 #######PROXY######
 
@@ -704,7 +754,7 @@ def TCP_proxy_cmp_wireguard_PPS():
 
 
     
-def implems_cmp():
+def implems_cmp_fair():
     msquic_index = 4
     quiche_index = 2
     picotls_index = 6
@@ -718,13 +768,104 @@ def implems_cmp():
     f = lambda x : x[1:-8]
     items.append(ItemToPlot("picotls", get_full_data,("../data/cmp/picotlsFair.txt",picotls_index,"Mbps",f)))
     
-    comparison_plot_box(items, " ", "Throughput (Mbps)","../plots/implem_cmp_fair.pdf")
+    comparison_plot_box(items, " ", "Goodput (Mbps)","../plots/implem_cmp_fair.pdf")
+    
+    
+def implems_cmp():
+    
+    items = []
+    items.append(ItemToPlot("picoquic",get_full_data,("../data/throughputBBR_nodpdk.txt",throughput_index, "Mbps")))
+    items.append(ItemToPlot("picoquic-dpdk",get_full_data,("../data/throughputBBR_dpdk.txt",throughput_index)))
+    
+    items.append(ItemToPlot("msquic", get_full_data,("../data/cmp/msquic.txt",msquic_index,"kbps",lambda a : float(a)/1000)))
+    items.append(ItemToPlot("quiche", get_full_data,("../data/cmp/quiche.txt",quiche_index,"Mbps")))
+    
+    f = lambda x : x[1:-8]
+    items.append(ItemToPlot("picotls", get_full_data,("../data/cmp/picotls.txt",picotls_index,"Mbps",f)))
+    
+    comparison_plot_box(items, " ", "Goodput (Mbps)","../plots/implem_cmp.pdf")
     
     
     
+# def implems_cmp_bar():
+#     items_picoquic = []
+#     items_quiche = []
+#     items_msquic = []
+#     items_picotls = []
+#     f = lambda x : x[1:-8]
     
+#     for setup in ["-c 2","-c 4","-c 4,6"]:
+#         clean_setup = setup.replace(" ", "-")
+#         items_picoquic.append(ItemToPlot("picoquic",get_full_data,("../data/cmp/picoquic{}.txt".format(clean_setup),throughput_index, "Mbps")))
+#         items_quiche.append(ItemToPlot("quiche", get_full_data,("../data/cmp/quiche{}.txt".format(clean_setup),quiche_index,"Mbps")))
+#         items_msquic.append(ItemToPlot("msquic", get_full_data,("../data/cmp/msquic{}.txt".format(clean_setup),msquic_index,"kbps",lambda a : float(a)/1000)))
+#         items_picotls.append(ItemToPlot("picotls", get_full_data,("../data/cmp/picotls{}.txt".format(clean_setup),picotls_index,"Mbps",f)))
+#     items = [items_picoquic,items_quiche, items_msquic,items_picotls]
+#     comparison_plot_box_n_superpossed(items,'Goodput (Mbps)',"test",["-c 2","-c 4","-c 4,6"],"../plots/cmp/cmp_implem_cores.pdf")
+    
+    
+def implems_cmp_bar_2():
+    
+    identity_function = lambda x :x 
+    f = lambda x : float(x[1:-8])/1000
+    
+    items_2 = []
+    items_4 = []
+    items_46 = []
+    dic_items = {}
+    dic_items["-c 2"] = items_2
+    dic_items["-c 4"] = items_4
+    dic_items[""] = items_46
+    
+    converter = lambda a : float(a)/1000
+    dic_f_params = {}
+    dic_f_params['picoquic'] = (throughput_index, "Mbps",converter)
+    dic_f_params['quiche'] = (quiche_index,"Mbps",converter)
+    dic_f_params['msquic'] = (msquic_index,"kbps",lambda a : float(a)/1000000)
+    dic_f_params['picotls'] = (picotls_index,"Mbps",f)
+    
+    
+    for setup in ["-c 2","-c 4",""]:
+        clean_setup = setup.replace(" ", "-")
+        
+        for implems in ["picoquic","picoquic-dpdk","quiche","msquic","picotls"]:
+            if(implems == "picoquic-dpdk"):
+                dic_items[setup].append(ItemToPlot("picoquic-dpdk",get_full_data,("../data/throughputBBR_dpdk.txt",throughput_index,"Mbps",converter)))
+            else:
+                dic_items[setup].append(ItemToPlot(implems,get_full_data,("../data/cmp/{}_ctesting{}.txt".format(implems,clean_setup),)+dic_f_params[implems]))
+    items = [items_2,items_4, items_46]
+    comparison_plot_box_n_superpossed(items,'Goodput (Gbps)',"",["picoquic","picoquic-dpdk","quiche","msquic","picotls"],["1 core", "2 cores", "no restriction"],"../plots/cmp/cmp_implem_cores.pdf")
+    
+   
+def set_box_color(bp, color):
+    plt.setp(bp['boxes'], color=color)
+    plt.setp(bp['whiskers'], color=color)
+    plt.setp(bp['caps'], color=color)
+    plt.setp(bp['medians'], color=color)
+    
+def implems_cmp_3():
+    converter = lambda a : float(a)/1000
+    f = lambda x : float(x[1:-8])/1000
+    msquic_converter = lambda a : float(a)/1000000
+    
+    items = []
+    items.append(ItemToPlot("1 core",get_full_data,("../data/cmp/picoquic_ctesting-c-2.txt",throughput_index, "Mbps",converter),color="blue"))
+    items.append(ItemToPlot("2 cores",get_full_data,("../data/cmp/picoquic_ctesting-c-4.txt",throughput_index, "Mbps",converter),color="blue"))
+    
+    items.append(ItemToPlot("1 core",get_full_data,("../data/throughputBBR_dpdk.txt",throughput_index,"Mbps",converter),color="red"))
+        
+    items.append(ItemToPlot("1 core", get_full_data,("../data/cmp/msquic_ctesting-c-2.txt",msquic_index,"kbps",msquic_converter),color="orange"))
+    items.append(ItemToPlot("2 cores", get_full_data,("../data/cmp/msquic_ctesting-c-4.txt",msquic_index,"kbps",msquic_converter),color = "orange"))
+    items.append(ItemToPlot("3 cores", get_full_data,("../data/cmp/msquic_ctesting.txt",msquic_index,"kbps",msquic_converter),color = "orange"))
+    
+    items.append(ItemToPlot("1 core", get_full_data,("../data/cmp/quiche_ctesting-c-2.txt",quiche_index,"Mbps",converter),color="green"))
+    items.append(ItemToPlot("2 cores", get_full_data,("../data/cmp/quiche_ctesting-c-4.txt",quiche_index,"Mbps",converter),color ="green"))
 
-
+    items.append(ItemToPlot("1 core", get_full_data,("../data/cmp/picotls_ctesting-c-2.txt",picotls_index,"Mbps",f),color="magenta"))
+    items.append(ItemToPlot("2 cores", get_full_data,("../data/cmp/picotls_ctesting-c-4.txt",picotls_index,"Mbps",f),color="magenta"))
+    items.append(ItemToPlot("no GRO\nno LRO", get_full_data,("../data/cmp/picotls/picotls_ctesting_nogro_nolro.txt",picotls_index,"Mbps",f),color="magenta"))
+ 
+    comparison_plot_box(items, " ", "Goodput (Gbps)","../plots/cmp/implem_cmp_clean.pdf",custom_colors=True)
 ######implem cmp##########
 
 ######################SELECT#########################
@@ -807,4 +948,11 @@ if __name__ == "__main__":
     # RSS_PLOT_BAR_X()
     #selectBarPLot()
     
-    throughput_comparison_interop_plot_box()
+    # throughput_comparison_interop_plot_box()
+    #throughput_comparison_interop_plot_box_no_patch()
+    # throughput_comparison_plot_box()
+    # implems_cmp_fair()
+    # implems_cmp()
+    # throughput_comparison_plot_box_patched()
+    #implems_cmp_bar_2()
+    implems_cmp_3()

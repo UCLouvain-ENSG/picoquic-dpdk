@@ -1,0 +1,20 @@
+server started on port 8443
+waiting for connections
+received 55030530048 bytes in 29.838 seconds (14754.482217.3Mbps); AES128-GCM
+waiting for connections
+server started on port 8443
+waiting for connections
+received 54733488128 bytes in 30.044 seconds (14574.221310.3Mbps); AES128-GCM
+waiting for connections
+server started on port 8443
+waiting for connections
+received 53798158336 bytes in 30.127 seconds (14285.699429.3Mbps); AES128-GCM
+waiting for connections
+server started on port 8443
+waiting for connections
+received 55672717312 bytes in 30.466 seconds (14618.976515.3Mbps); AES128-GCM
+waiting for connections
+server started on port 8443
+waiting for connections
+received 55220584448 bytes in 29.763 seconds (14842.746887.3Mbps); AES128-GCM
+waiting for connections
