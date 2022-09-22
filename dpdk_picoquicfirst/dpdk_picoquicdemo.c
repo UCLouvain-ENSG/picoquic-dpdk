@@ -161,6 +161,8 @@ char *client_scenario = NULL;
 picoquic_quic_config_t config;
 int just_once = 0;
 int nb_of_repetition = 1;
+int nb_of_threads = 1;
+int nb_of_repetition_per_threads = 1;
 int change_ip_client = 0;
 
 // default values
@@ -537,19 +539,19 @@ proxy_rx_job(void *arg){
 
 
 static int
-client_job(void *arg)
+client_dpdk_job(void *arg)
 {
-    unsigned *tab = (unsigned *)arg;
-    unsigned portid = *((unsigned *)arg);
-    printf("port_id : %u\n",portid);
+    thread_stats* stats = (thread_stats *)arg;
+
     unsigned queueid = 0;
     unsigned lcore_id = rte_lcore_id();
+    unsigned portid = lcore_id;
 
     // giving a different IP for each client using the portid
     // two variant here, usefull when testing RSS
     uint32_t ip;
     if(change_ip_client){
-        ip = (20U << 24) | (portid << 16) | (0 << 8) | 1;
+        ip = (20U << 24) | (lcore_id << 16) | (0 << 8) | 1;
     }
     else{
         ip = (198U << 24) | (18 << 16) | (portid << 8) | 1;
@@ -564,9 +566,7 @@ client_job(void *arg)
     (*(struct sockaddr_in *)(&addr_from)).sin_port = htons(4443);
     (*(struct sockaddr_in *)(&addr_from)).sin_addr.s_addr = rte_cpu_to_be_32(ip);
 
-    // proxy_mode
-
-    if (is_proxy)
+    if (is_proxy) // proxy mode with dpdk
     {
         unsigned main_port = 1;
         unsigned proxy_port = 0;
@@ -582,7 +582,9 @@ client_job(void *arg)
             quic_client(server_name, server_port, &config,
                                           force_migration, nb_packets_before_update, client_scenario, handshake_test, request_test, 0, 
                                           MAX_PKT_BURST_RX,
-                                          MAX_PKT_BURST_TX,  0, 0, NULL, NULL, NULL, NULL,&proxy_ctx);
+                                          MAX_PKT_BURST_TX,
+                                          stats,
+                                          0, 0, NULL, NULL, NULL, NULL,&proxy_ctx);
 
         }
         else{
@@ -595,22 +597,17 @@ client_job(void *arg)
                     dpdk,
                     MAX_PKT_BURST_RX,
                     MAX_PKT_BURST_TX,  
+                    stats,
                     main_port, queueid, &addr_from, &eth_addr, mb_pools[main_port], tx_buffers[main_port],&proxy_ctx);
         }
     }
-    else
+    else //Not proxy, dpdk mode
     {
-        // handshake test
-        if (handshake_test)
-        {
-            struct timeval start_time;
-            struct timeval current_time;
-            for (int i = 0; i < nb_of_repetition; i++)
+            for (int i = 0; i < nb_of_repetition_per_threads; i++)
             {
-                gettimeofday(&start_time, NULL);
-                gettimeofday(&current_time, NULL);
-                int counter = 0;
-                while ((current_time.tv_sec - start_time.tv_sec) < 20)
+
+                uint64_t start_time = picoquic_current_time();
+                do
                 {
                     quic_client(server_name,
                                 server_port,
@@ -621,33 +618,16 @@ client_job(void *arg)
                                 dpdk,
                                 MAX_PKT_BURST_RX,
                                 MAX_PKT_BURST_TX,  
+                                stats,
                                 portid, queueid, &addr_from, &eth_addr, mb_pools[portid], tx_buffers[portid],NULL);
-                    counter++;
-                    gettimeofday(&current_time, NULL);
-                }
-                printf("Number of handshakes served : %d\n", counter);
-                sleep(2);
+                    stats->counter++;
+                } while ( handshake_test && (picoquic_current_time() - start_time ) < handshake_test * 1000000);
             }
-        }
-        else
-        {
-            for (int i = 0; i < nb_of_repetition; i++)
-            {
-                quic_client(server_name,
-                            server_port,
-                            &config,
-                            force_migration,
-                            nb_packets_before_update,
-                            client_scenario, handshake_test, request_test,
-                            dpdk,
-                            MAX_PKT_BURST_RX, 
-                            MAX_PKT_BURST_TX,
-                            portid, queueid, &addr_from, &eth_addr, mb_pools[portid], tx_buffers[portid],NULL);
-                sleep(2);
-            }
-        }
     }
 }
+
+
+void client_socket_job(void*);
 
 static int
 server_job(void *arg)
@@ -779,6 +759,8 @@ void sig_handler(int signum) {
     }
 }
 
+
+
 int main(int argc, char **argv)
 {
     char option_string[512];
@@ -821,7 +803,7 @@ int main(int argc, char **argv)
     (void)WSA_START(MAKEWORD(2, 2), &wsaData);
 #endif
     picoquic_config_init(&config);
-    char params[] = "u:f:A:N:@:*:2:d:3H1rX!";
+    char params[] = "u:f:A:N:@:*:2:d:3H:1rX!";
     int length = strlen(params);
     memcpy(option_string, params, length);
     ret = picoquic_config_option_letters(option_string + length, sizeof(option_string) - length, NULL);
@@ -856,7 +838,7 @@ int main(int argc, char **argv)
                 flow = 1;
                 break;
             case 'H':
-                handshake_test = 1;
+                handshake_test = atoi(optarg);
                 break;
             case '1':
                 just_once = 1;
@@ -913,6 +895,14 @@ int main(int argc, char **argv)
                     nb_of_repetition = atoi(optarg);
                 }
                 break;
+            case 't':
+                ;
+                int ths = atoi(optarg);
+                if (ths > 0)
+                {
+                    nb_of_threads = atoi(optarg);
+                }
+                break;
             default:
                 if (picoquic_config_command_line(opt, &optind, argc, (char const **)argv, optarg, &config) != 0)
                 {
@@ -961,6 +951,11 @@ int main(int argc, char **argv)
         rx_to_worker_ring = rte_ring_create("rx_to_worker", rte_align32pow2(RING_SIZE), rte_socket_id(), RING_F_SP_ENQ | RING_F_SC_DEQ);
     }
 
+    nb_of_repetition_per_threads = nb_of_repetition / nb_of_threads;
+    int nb_tot = nb_of_repetition_per_threads * nb_of_threads;
+    if (nb_tot != nb_of_repetition) {
+        printf("WARNING: The nb of repetitions does not divide the number of threads. Total number of repetitions will be %d");
+    }
     if (is_client == 0)
     {
         if(dpdk){
@@ -1071,10 +1066,12 @@ int main(int argc, char **argv)
 
         printf("Server exit with code = %d\n", ret);
     }
-    else
+    else //is client
     {
         unsigned portids[MAX_NB_OF_PORTS_AND_LCORES];
         int index_port = 0;
+
+        thread_stats stats[256] = {0};
 
         /* Run as client */
         if (is_proxy)
@@ -1103,7 +1100,7 @@ int main(int argc, char **argv)
             RTE_LCORE_FOREACH_WORKER(lcore_id)
             {
                 if(!has_client_been_started){
-                    rte_eal_remote_launch(client_job, &portids[index_lcore], lcore_id);
+                    rte_eal_remote_launch(client_dpdk_job, &portids[index_lcore], &stats[index_lcore]);
                     index_lcore++;
                     has_client_been_started = 1;
                 }
@@ -1144,47 +1141,35 @@ int main(int argc, char **argv)
                 RTE_LCORE_FOREACH_WORKER(lcore_id)
                 {
 
-                    rte_eal_remote_launch(client_job, &portids[index_lcore], lcore_id);
+                    rte_eal_remote_launch(client_dpdk_job, &portids[index_lcore], &stats[lcore_id]);
                     index_lcore++;
                 }
             }
             else
             {
-                if (handshake_test)
-                {
-                    struct timeval start_time;
-                    struct timeval current_time;
-                    
-                    for (int i = 0; i < nb_of_repetition; i++){
-                        gettimeofday(&start_time, NULL);
-                        gettimeofday(&current_time, NULL);
-                        int counter = 0;
-                        while ((current_time.tv_sec - start_time.tv_sec) < 20)
-                        {
-                            ret = quic_client(server_name, server_port, &config,
-                                            force_migration, nb_packets_before_update, client_scenario, handshake_test, request_test, dpdk, 
-                                            MAX_PKT_BURST_RX,
-                                            MAX_PKT_BURST_TX,  0, 0, NULL, NULL, NULL, NULL,NULL);
-                            counter++;
-                            gettimeofday(&current_time, NULL);
-                        }
-                        printf("Number of request served : %d\n", counter);
-                        sleep(2);
-                    }
-                    
+                pthread_t threads[nb_of_threads];
+                thread_stats stats[nb_of_threads];
+                bzero(stats, sizeof(thread_stats) * nb_of_threads);
+
+                for (int i = 0; i < nb_of_threads; i++) {
+                          pthread_create(&threads[i],
+                          0,
+                          &client_socket_job,
+                          &stats[i]);
                 }
-                else
-                {
-                    printf("Starting Picoquic (v%s) connection to server = %s, port = %d\n", PICOQUIC_VERSION, server_name, server_port);
-                    for (int i = 0; i < nb_of_repetition; i++)
-                    {
-                        ret = quic_client(server_name, server_port, &config,
-                                          force_migration, nb_packets_before_update, client_scenario, handshake_test, request_test, dpdk, 
-                                          MAX_PKT_BURST_RX,
-                                          MAX_PKT_BURST_TX,  0, 0, NULL, NULL, NULL, NULL,NULL);
-                        sleep(2);
-                    }
+
+                int total = 0;
+                uint64_t total_bytes;
+                int total_mbps;
+                for (int i = 0; i < nb_of_threads; i++) {
+                    printf("Joining thread %d\n", i);
+                    pthread_join(threads[i], 0);
+                    total += stats[i].counter;
+                    total_bytes += stats[i].bytes;
+                    total_mbps +=(int) (((double)stats[i].bytes * 8.0) / ((double)stats[i].time)) ;
                 }
+                printf("Served %d requests\n", total);
+                printf("Transferred %lu bytes, %d Mbps\n", total_bytes, total_mbps);
             }
         }
         printf("Client exit with code = %d\n", ret);
@@ -1193,4 +1178,29 @@ int main(int argc, char **argv)
     /* clean up the EAL */
     rte_eal_cleanup();
     picoquic_config_clear(&config);
+}
+
+void client_socket_job(void* arg) {
+    int ret;
+    thread_stats* s = (thread_stats*)arg;
+
+    printf("Starting Picoquic (v%s) connection to server = %s, port = %d\n", PICOQUIC_VERSION, server_name, server_port);
+    for (int i = 0; i < nb_of_repetition_per_threads; i++) {
+                    uint64_t start_time = picoquic_current_time();
+                    uint64_t t;
+                        do {
+                            ret = quic_client(server_name, server_port, &config,
+                                            force_migration, nb_packets_before_update, client_scenario, handshake_test, request_test, dpdk,
+                                            MAX_PKT_BURST_RX,
+                                            MAX_PKT_BURST_TX,
+                                            s,
+                                            0, 0, NULL, NULL, NULL, NULL,NULL);
+                            s->counter++;
+                            t = picoquic_current_time() - start_time;
+                        } while (handshake_test && t < handshake_test * 1000000);
+                        s->time+= t;
+    }
+
+    printf("Number of request served : %d\n", s->counter);
+    printf("Number of bytes served : %ul in %dus\n", s->bytes, s->time);
 }

@@ -85,6 +85,10 @@
 
 #define PICOQUIC_SAMPLE_SERVER_QLOG_DIR "."
 
+#define fdebugprint(...)
+#define debugprint(...)
+#define DEBUG 0
+
 //client
 
 typedef struct st_client_loop_cb_t {
@@ -113,6 +117,12 @@ typedef struct st_client_loop_cb_t {
     picoquic_connection_id_t client_cid_before_migration;
 } client_loop_cb_t;
 
+typedef struct thread_stats_t {
+    int counter;
+    uint64_t bytes;
+    uint64_t time;
+} thread_stats;
+
 static const char * test_scenario_default = "0:index.html;4:test.html;8:/1234567;12:main.jpg;16:war-and-peace.txt;20:en/latest/;24:/file-123K";
 
 int client_loop_cb(picoquic_quic_t* quic, picoquic_packet_loop_cb_enum cb_mode, 
@@ -123,6 +133,7 @@ int quic_client(const char *ip_address_text, int server_port,
                 int nb_packets_before_key_update, char const *client_scenario_text, int handshake_test, int request_test,int dpdk, 
                 int batching_size_rx,
                 int batching_size_tx, 
+                thread_stats* stats,
                 unsigned portid,
                 unsigned queueid,
                 struct sockaddr_storage *addr_from,

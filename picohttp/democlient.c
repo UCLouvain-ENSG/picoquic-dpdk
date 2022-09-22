@@ -683,10 +683,14 @@ int picoquic_demo_client_callback(picoquic_cnx_t* cnx,
                 if (picoquic_demo_client_close_stream(cnx, ctx, stream_ctx)) {
                     fin_stream_id = stream_id;
                     if (stream_id <= 64 && !ctx->no_print) {
+
+            if (!ctx->no_print)
                         fprintf(stdout, "Stream %d ended after %d bytes\n",
                             (int)stream_id, (int)stream_ctx->received_length);
                     }
                     if (stream_ctx->received_length == 0) {
+
+            if (!ctx->no_print)
                         picoquic_log_app_message(cnx, "Stream %d ended after %d bytes, ret=0x%x",
                             (int)stream_id, (int)stream_ctx->received_length, ret);
                     }
