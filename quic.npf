@@ -1,0 +1,114 @@
+%info
+A test script to compare performance of QUIC stacks
+
+This file is intended to be run with NPF
+
+%variables
+
+FSIZE=5000000
+PORT=4455
+SERVER=picoquic
+CLIENT=picoquic
+RP=10
+CLIENT_IRQ=8
+CLIENT_CPU=8
+CLIENT_THREADS=8
+SRV_IRQ=0
+SRV_CPU=1
+CLIENT_PARALLEL=128
+H=10
+//CLIENT={quiche,ngtcp2}
+//SERVER={quiche,ngtcp2}
+
+%config
+timeout=30
+
+%init@server sudo=true
+docker stop quic-srv
+docker rm quic-srv
+docker stop quic-client
+docker rm quic-client
+echo "RESULT 0"
+
+// WRK
+%script@client delay=2 sudo=true ifeq-CLIENT=wrk-quic delay=3
+export LD_LIBRARY_PATH=/home/tbarbette/workspace/dpdk-21.08/install/lib/x86_64-linux-gnu/:/usr/lib64/:$LD_LIBRARY_PATH
+fname=log.${NPF_ARRAY_ID}
+cd ~/workspace/wrk-quic/src
+DST=10.100.0.2
+taskset -c 0-$CLIENT_CPU ../wrk -a -R 0 --timeout $H -q -t $CLIENT_THREADS -c $CLIENT_PARALLEL  https://$DST:4433/$FSIZE -L -U 2>&1 | tee $fname
+cat $fname | grep "Transfer/sec" | awk '{printf "RESULT-GOODPUT %s\n", $2}' | head -n 1
+cat $fname | grep "Requests/sec" | awk '{printf "RESULT-REQUEST %s\n", $2}' | head -n 1
+cat $fname | grep "Latency" | awk '{printf "RESULT-LATENCY %s\n", $2}' | head -n 1
+cat $fname| grep "99.000%" | awk '{printf "RESULT-LAT99 %s\n", $2}' | head -n 1
+
+
+
+//--------------
+// PICOQUIC w/wo DPDK
+//--------------
+
+%script@server sudo=true ifeq-SERVER=picoquic-dpdk
+cd ${NPF_ROOT}
+export LD_LIBRARY_PATH=/home/tbarbette/workspace/dpdk-21.11.2/install/lib/:/usr/lib64/:/home/tbarbette/workspace/dpdk-21.11.2/install/lib/x86_64-linux-gnu/
+./dpdk_picoquicdemo --dpdk -l 0-1 -a 0000:18:00.0 -- -p 4443
+
+%script@client sudo=true delay=3 ifeq-CLIENT=picoquic-dpdk
+cd ${NPF_ROOT}
+export LD_LIBRARY_PATH=/home/tbarbette/workspace/dpdk-21.11.2/install/lib/:/usr/lib64/:/home/tbarbette/workspace/dpdk-21.11.2/install/lib/x86_64-linux-gnu/
+./dpdk_picoquicdemo --dpdk -l 0-$CLIENT_CPU -a 0000:18:00.0 -- -N $RP -H $H -X -D -A 50:6b:4b:f3:7c:70 10.100.0.2 4443 /$FSIZE | tee out
+echo "RESULT-REQUESTS "$(cat out | grep Served | cut -f 2 -d' ')
+echo "RESULT-GOODPUT "$(cat out | grep Transfer | cut -f 4 -d' ')
+
+%script@server sudo=true ifeq-SERVER=picoquic
+killall irqbalance &> /dev/null
+ethtool -L ${self:0:ifname} combined $(( max($SRV_IRQ, 1) ))
+set_irq_affinity.sh ${self:0:ifname}
+cd ${NPF_ROOT}
+export LD_LIBRARY_PATH=/home/tbarbette/workspace/dpdk-21.11.2/install/lib/:/usr/lib64/:/home/tbarbette/workspace/dpdk-21.11.2/install/lib/x86_64-linux-gnu/
+taskset -c $(( $SRV_IRQ ))-$(( $SRV_IRQ + $SRV_CPU - 1)) ./dpdk_picoquicdemo --nodpdk -p 4443
+
+%script@client sudo=true delay=3 ifeq-CLIENT=picoquic
+killall irqbalance &> /dev/null
+ethtool -L ${self:0:ifname} combined $(( max($CLIENT_IRQ, 1) ))
+set_irq_affinity.sh ${self:0:ifname}
+cd ${NPF_ROOT}
+export LD_LIBRARY_PATH=/home/tbarbette/workspace/dpdk-21.11.2/install/lib/:/usr/lib64/:/home/tbarbette/workspace/dpdk-21.11.2/install/lib/x86_64-linux-gnu/
+taskset -c $(( $CLIENT_IRQ ))-$(( $CLIENT_IRQ + $CLIENT_CPU - 1)) ./dpdk_picoquicdemo --nodpdk -N $RP -H $H  -t $CLIENT_THREADS -D 10.100.0.2 4443 /$FSIZE | tee out
+echo "RESULT-REQUESTS "$(cat out | grep Served | cut -f 2 -d' ')
+echo "RESULT-GOODPUT "$(cat out | grep Transfer | cut -f 4 -d' ')
+
+//--------
+// QUICHE
+//--------
+%script@server sudo=true 0:ip=194.168.1.2 ifeq-SERVER=quiche
+cd /home/tbarbette/workspace/quic-implems-dockers/quiche-cloudflare
+docker run --name quic-srv -e ROLE=server --net=mynet --mount type=bind,source="$(pwd)",target=/certs quic-quiche -p $PORT -k /certs/cert.key -c /certs/cert.crt 
+echo "SERVER FINISHED"
+
+%script@client sudo=true delay=3 ifeq-CLIENT=quiche
+docker stop quic-client &> /dev/null
+docker rm quic-client &> /dev/null
+sleep 2
+cd /home/tbarbette/workspace/quic-implems-dockers/quiche-cloudflare
+docker run --name quic-client -e ROLE=client --net=mynet --mount type=bind,source="$(pwd)",target=/logs quic-quiche -G $FSIZE -X keys.log ${server:0:ip} $PORT
+docker stop quic-srv &> /dev/null
+docker rm quic-srv &> /dev/null
+sleep 1
+
+//--------
+// NGTCP2
+//--------
+%script@server sudo=true 0:ip=194.168.1.2 ifeq-SERVER=ngtcp2
+cd /home/tbarbette/workspace/quic-implems-dockers/ngtcp2
+docker run --name quic-srv -e ROLE=server --net=mynet --mount type=bind,source="$(pwd)"/cert,target=/certs quic-ngtcp2 -p $PORT -k /certs/server.key -c /certs/server.crt 
+echo "SERVER FINISHED"
+
+%script@client sudo=true delay=3 ifeq-CLIENT=ngtcp2
+docker stop quic-client &> /dev/null
+docker rm quic-client &> /dev/null
+cd /home/tbarbette/workspace/quic-implems-dockers/ngtcp2
+docker run --name quic-client -e ROLE=client --net=mynet --mount type=bind,source="$(pwd)",target=/logs quic-ngtcp2 -G $FSIZE -X keys.log ${server:0:ip} $PORT
+docker stop quic-srv
+docker rm quic-srv
+sleep 1
