@@ -19,7 +19,7 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define FASTPATCH 1
+#define FASTPATCH 0
 #include "picosocks.h"
 #include "picoquic_utils.h"
 

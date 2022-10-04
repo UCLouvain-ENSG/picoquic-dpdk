@@ -270,7 +270,6 @@ int picoquic_packet_loop(picoquic_quic_t* quic,
     // time (&start);
     // Do some calculation.
     
-    
     while (ret == 0) {
         // time (&end);
         // dif = difftime (end,start);
@@ -297,7 +296,6 @@ int picoquic_packet_loop(picoquic_quic_t* quic,
             }
         }
         loop_immediate = 0;
-
         bytes_recv = picoquic_select_ex(s_socket, nb_sockets,
             &addr_from,
             &addr_to, &if_index_to, &received_ecn,
@@ -383,6 +381,10 @@ int picoquic_packet_loop(picoquic_quic_t* quic,
                             sock_ret = picoquic_sendmsg(send_socket,
                                 (struct sockaddr*)&peer_addr, (struct sockaddr*)&local_addr, if_index,
                                 (const char*)send_buffer, (int)send_length, (int)send_msg_size, &sock_err);
+
+                            struct sockaddr_in *addr_in = (struct sockaddr_in *)&peer_addr;
+                            // printf("IP address: %s\n", s);
+                            // printf("msg sent\n");
                             
                         }
 

@@ -348,6 +348,11 @@ void setup_pkt_udp_ip_headers(struct rte_ipv4_hdr *ip_hdr,
                               uint16_t pkt_data_len,
                               struct sockaddr_storage local_addr,
                               struct sockaddr_storage peer_addr);
+void setup_pkt_udp_ip6_headers(struct rte_ipv6_hdr *ip_hdr,
+                              struct rte_udp_hdr *udp_hdr,
+                              uint16_t pkt_data_len,
+                              struct sockaddr_storage local_addr,
+                              struct sockaddr_storage peer_addr);
 
 
 void copy_buf_to_pkt(void *buf, unsigned len, struct rte_mbuf *pkt, unsigned offset);
