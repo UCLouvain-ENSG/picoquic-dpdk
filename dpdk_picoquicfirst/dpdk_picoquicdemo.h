@@ -121,6 +121,7 @@ typedef struct thread_stats_t {
     int counter;
     uint64_t bytes;
     uint64_t time;
+    int portid;
 } thread_stats;
 
 static const char * test_scenario_default = "0:index.html;4:test.html;8:/1234567;12:main.jpg;16:war-and-peace.txt;20:en/latest/;24:/file-123K";

@@ -531,6 +531,7 @@ int quic_client(const char *ip_address_text, int server_port,
             picoquic_log_app_message(cnx_client, "Out of %d zero RTT packets, %d were acked by the server.",
                 cnx_client->nb_zero_rtt_sent, cnx_client->nb_zero_rtt_acked);
         }
+
         if(!handshake_test){
             fdebugprint(stdout, "Quic Bit was %sgreased by the client.\n", (cnx_client->quic_bit_greased) ? "" : "NOT ");
             fdebugprint(stdout, "Quic Bit was %sgreased by the server.\n", (cnx_client->quic_bit_received_0) ? "" : "NOT ");
@@ -649,7 +650,6 @@ int quic_client(const char *ip_address_text, int server_port,
                             picoquic_get_data_received(cnx_client),
                             duration_usec / 1000000.0, receive_rate_mbps);
                     }
-                    stats->bytes += picoquic_get_data_received(cnx_client);
                     /* Print those for debugging the effects of ack frequency and flow control */
                     debugprint("max_data_local: %" PRIu64 "\n", cnx_client->maxdata_local);
                     debugprint("max_max_stream_data_local: %" PRIu64 "\n", cnx_client->max_max_stream_data_local);
@@ -665,6 +665,8 @@ int quic_client(const char *ip_address_text, int server_port,
                     debugprint("max_mtu_received: %zu\n", cnx_client->max_mtu_received);
                 }
             }
+
+                    stats->bytes += picoquic_get_data_received(cnx_client);
         }
     }
 

@@ -545,7 +545,9 @@ client_dpdk_job(void *arg)
 
     unsigned queueid = 0;
     unsigned lcore_id = rte_lcore_id();
-    unsigned portid = lcore_id;
+    unsigned portid = stats->portid;
+
+    printf("Lcore %d, port %d\n", lcore_id, portid);
 
     // giving a different IP for each client using the portid
     // two variant here, usefull when testing RSS
@@ -607,8 +609,10 @@ client_dpdk_job(void *arg)
             {
 
                 uint64_t start_time = picoquic_current_time();
+                uint64_t t;
                 do
                 {
+                    printf("Launching QUIC client\n");
                     quic_client(server_name,
                                 server_port,
                                 &config,
@@ -621,7 +625,11 @@ client_dpdk_job(void *arg)
                                 stats,
                                 portid, queueid, &addr_from, &eth_addr, mb_pools[portid], tx_buffers[portid],NULL);
                     stats->counter++;
-                } while ( handshake_test && (picoquic_current_time() - start_time ) < handshake_test * 1000000);
+
+                    t = picoquic_current_time() - start_time;
+                } while ( handshake_test && t < handshake_test * 1000000);
+
+                        stats->time+= t;
             }
     }
 }
@@ -796,7 +804,9 @@ int main(int argc, char **argv)
             rte_panic("Cannot init EAL\n");
         argc -= ret;
         argv += ret;
-        printf("EAL setup finshed\n");
+
+        nb_of_threads = rte_lcore_count() - 1;
+        printf("EAL setup finshed with %d threads\n",nb_of_threads);
     }
 #ifdef _WINDOWS
     WSADATA wsaData = {0};
@@ -898,6 +908,11 @@ int main(int argc, char **argv)
             case 't':
                 ;
                 int ths = atoi(optarg);
+                if (dpdk) {
+                    printf("ERROR: -t is invalid with --dpdk\n");
+                    usage();
+                    return -1;
+                }
                 if (ths > 0)
                 {
                     nb_of_threads = atoi(optarg);
@@ -951,10 +966,17 @@ int main(int argc, char **argv)
         rx_to_worker_ring = rte_ring_create("rx_to_worker", rte_align32pow2(RING_SIZE), rte_socket_id(), RING_F_SP_ENQ | RING_F_SC_DEQ);
     }
 
-    nb_of_repetition_per_threads = nb_of_repetition / nb_of_threads;
-    int nb_tot = nb_of_repetition_per_threads * nb_of_threads;
-    if (nb_tot != nb_of_repetition) {
-        printf("WARNING: The nb of repetitions does not divide the number of threads. Total number of repetitions will be %d");
+    if (handshake_test > 0) {
+
+        nb_of_repetition_per_threads = 1;
+    } else {
+        nb_of_repetition_per_threads = nb_of_repetition / nb_of_threads;
+        if (nb_of_repetition_per_threads < 1)
+            nb_of_repetition_per_threads = 1;
+        int nb_tot = nb_of_repetition_per_threads * nb_of_threads;
+        if (nb_tot != nb_of_repetition) {
+            printf("WARNING: The nb of repetitions does not divide the number of threads. Total number of repetitions will be %d\n", nb_tot);
+        }
     }
     if (is_client == 0)
     {
@@ -1034,6 +1056,8 @@ int main(int argc, char **argv)
                     printf("not supposed to be here\n");
                 }
             }
+
+            rte_eal_mp_wait_lcore();
         }
         else
         {
@@ -1049,11 +1073,15 @@ int main(int argc, char **argv)
                 if (flow)
                     dpdk_init_flow_rules(get_nb_core(), bind, bind_n);
 
+
                 RTE_LCORE_FOREACH_WORKER(lcore_id)
                 {
                     printf("Launch %d\n", lcore_id);
+
                     rte_eal_remote_launch(server_job, &demo_configs[lcore_id], lcore_id);
                 }
+
+                rte_eal_mp_wait_lcore();
             }
             else
             {
@@ -1071,7 +1099,9 @@ int main(int argc, char **argv)
         unsigned portids[MAX_NB_OF_PORTS_AND_LCORES];
         int index_port = 0;
 
-        thread_stats stats[256] = {0};
+        thread_stats stats[nb_of_threads];
+        bzero(stats, sizeof(thread_stats) * nb_of_threads);
+
 
         /* Run as client */
         if (is_proxy)
@@ -1092,7 +1122,6 @@ int main(int argc, char **argv)
             unsigned index_lcore = 0;
 
             printf("Starting Picoquic (v%s) connection to server = %s, port = %d\n", PICOQUIC_VERSION, server_name, server_port);
-
             
             int has_client_been_started = 0;
             int has_rx_been_started = 0;
@@ -1112,6 +1141,7 @@ int main(int argc, char **argv)
                     printf("not supposed to be here\n");
                 }
             }
+            rte_eal_mp_wait_lcore();
         }
         else
         {
@@ -1140,17 +1170,17 @@ int main(int argc, char **argv)
                 printf("Starting Picoquic (v%s) connection to server = %s, port = %d\n", PICOQUIC_VERSION, server_name, server_port);
                 RTE_LCORE_FOREACH_WORKER(lcore_id)
                 {
+                    printf("Launching core %d/%d, port %d\n",index_lcore, lcore_id, portids[index_lcore]);
 
-                    rte_eal_remote_launch(client_dpdk_job, &portids[index_lcore], &stats[lcore_id]);
+                    stats[index_lcore].portid = portids[index_lcore];
+                    rte_eal_remote_launch(client_dpdk_job, &stats[index_lcore], lcore_id);
                     index_lcore++;
                 }
+                rte_eal_mp_wait_lcore();
             }
             else
             {
                 pthread_t threads[nb_of_threads];
-                thread_stats stats[nb_of_threads];
-                bzero(stats, sizeof(thread_stats) * nb_of_threads);
-
                 for (int i = 0; i < nb_of_threads; i++) {
                           pthread_create(&threads[i],
                           0,
@@ -1158,23 +1188,26 @@ int main(int argc, char **argv)
                           &stats[i]);
                 }
 
-                int total = 0;
-                uint64_t total_bytes;
-                int total_mbps;
                 for (int i = 0; i < nb_of_threads; i++) {
                     printf("Joining thread %d\n", i);
                     pthread_join(threads[i], 0);
-                    total += stats[i].counter;
-                    total_bytes += stats[i].bytes;
-                    total_mbps +=(int) (((double)stats[i].bytes * 8.0) / ((double)stats[i].time)) ;
                 }
-                printf("Served %d requests\n", total);
-                printf("Transferred %lu bytes, %d Mbps\n", total_bytes, total_mbps);
             }
         }
+
+        int total = 0;
+        uint64_t total_bytes = 0;
+        int total_mbps = 0;
+
+        for (int i = 0; i < nb_of_threads; i++) {
+            total += stats[i].counter;
+            total_bytes += stats[i].bytes;
+            total_mbps +=(int) (((double)stats[i].bytes * 8.0) / ((double)stats[i].time)) ;
+        }
+        printf("Served %d requests\n", total);
+        printf("Transferred %lu bytes, %d Mbps\n", total_bytes, total_mbps);
         printf("Client exit with code = %d\n", ret);
     }
-    rte_eal_mp_wait_lcore();
     /* clean up the EAL */
     rte_eal_cleanup();
     picoquic_config_clear(&config);
@@ -1202,5 +1235,5 @@ void client_socket_job(void* arg) {
     }
 
     printf("Number of request served : %d\n", s->counter);
-    printf("Number of bytes served : %ul in %dus\n", s->bytes, s->time);
+    printf("Number of bytes served : %lu in %dus\n", s->bytes, s->time);
 }

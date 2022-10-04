@@ -348,8 +348,8 @@ int picoquic_packet_loop_dpdk(picoquic_quic_t *quic,
     const int MAX_PKT_BURST_RX = batching_size_rx;
     const int MAX_PKT_BURST_TX = batching_size_tx;
 
-    printf("MAX_PKT_BURST_RX : %d\n", MAX_PKT_BURST_RX);
-    printf("MAX_PKT_BURST_TX : %d\n", MAX_PKT_BURST_TX);
+    //printf("MAX_PKT_BURST_RX : %d\n", MAX_PKT_BURST_RX);
+    //printf("MAX_PKT_BURST_TX : %d\n", MAX_PKT_BURST_TX);
 
 
     struct rte_mbuf *pkts_burst[MAX_PKT_BURST_RX];
@@ -407,7 +407,7 @@ int picoquic_packet_loop_dpdk(picoquic_quic_t *quic,
 
 
     if (my_mac == NULL) {
-        printf("Unknown port MAC address. Using default device MAC address...\n");
+        //printf("Unknown port MAC address. Using default device MAC address...\n");
         my_mac = rte_malloc(NULL, sizeof(struct rte_ether_addr), 16);
         if (!my_mac) {
             printf("Could not allocate memory !");
