@@ -475,6 +475,7 @@ int picoquic_packet_loop_dpdk(picoquic_quic_t *quic,
                         {
                             received_ecn = 1;
                         }
+
                         src_addr = ip_hdr->src_addr;
                         dst_addr = ip_hdr->dst_addr;
                         src_port = udp_hdr->src_port;
@@ -490,7 +491,11 @@ int picoquic_packet_loop_dpdk(picoquic_quic_t *quic,
 
                         if (dst_port == my_port_addr && dst_addr == my_ip_addr)
                         {
-                        
+#if RTE_VERSION < RTE_VERSION_NUM(21, 11, 0, 0)
+                            add_mac_ip_pair(src_addr, (*eth_hdr).s_addr, ip_addresses, mac_addresses, IP_MAC_ARRAYS_LENGTH);
+#else
+                            add_mac_ip_pair(src_addr, (*eth_hdr).src_addr, ip_addresses, mac_addresses, IP_MAC_ARRAYS_LENGTH);
+#endif           
                             unsigned char *payload = (unsigned char *)(udp_hdr + 1);
                             rte_be16_t length = udp_hdr->dgram_len;
                             size_t payload_length = htons(length) - sizeof(struct rte_udp_hdr);

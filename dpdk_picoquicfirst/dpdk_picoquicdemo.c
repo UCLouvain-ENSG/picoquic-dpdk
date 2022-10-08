@@ -558,10 +558,6 @@ client_dpdk_job(void *arg)
     else{
         ip = (198U << 24) | (18 << 16) | (portid << 8) | 1;
     }
-    struct in_addr ip_addr;
-    ip_addr.s_addr = rte_cpu_to_be_32(ip);
-    printf("The IP address of client %u is %u\n", portid, rte_cpu_to_be_32(ip));
-
     struct sockaddr_storage addr_from;
 
     (*(struct sockaddr_in *)(&addr_from)).sin_family = AF_INET;
