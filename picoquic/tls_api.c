@@ -479,7 +479,7 @@ ptls_openssl_verify_certificate_t* picoquic_openssl_get_certificate_verifier(cha
             }
         }
 
-        ptls_openssl_init_verify_certificate(verifier, store, NULL);
+        ptls_openssl_init_verify_certificate(verifier, store);
 
         // If we created an instance of the store, release our reference after giving it to the verify_certificate callback.
         // The callback internally increased the reference counter by one.

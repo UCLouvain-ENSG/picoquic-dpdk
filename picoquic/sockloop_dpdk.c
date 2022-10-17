@@ -598,12 +598,6 @@ int picoquic_packet_loop_dpdk(picoquic_quic_t *quic,
                         {
                             received_ecn = 1;
                         }
-#if RTE_VERSION < RTE_VERSION_NUM(21, 11, 0, 0)
-                        add_mac_ip6_pair(src_addr, eth_hdr->s_addr, ip6_addresses, mac6_addresses, IP_MAC_ARRAYS_LENGTH);
-#else
-                        add_mac_ip6_pair(src_addr, (*eth_hdr).src_addr, ip6_addresses, mac6_addresses, IP_MAC_ARRAYS_LENGTH);
-#endif
-
                         (*(struct sockaddr_in6 *)(&addr_from)).sin6_family = AF_INET6;
                         (*(struct sockaddr_in6 *)(&addr_from)).sin6_port = src_port;
                         (*(struct sockaddr_in6 *)(&addr_from)).sin6_addr = src_addr;
@@ -614,6 +608,11 @@ int picoquic_packet_loop_dpdk(picoquic_quic_t *quic,
 
                         if (dst_port == my_port_addr && memcmp(dst_addr.s6_addr,my_ip6_addr.s6_addr,16) == 0)
                         {
+#if RTE_VERSION < RTE_VERSION_NUM(21, 11, 0, 0)
+                            add_mac_ip6_pair(src_addr, eth_hdr->s_addr, ip6_addresses, mac6_addresses, IP_MAC_ARRAYS_LENGTH);
+#else
+                            add_mac_ip6_pair(src_addr, (*eth_hdr).src_addr, ip6_addresses, mac6_addresses, IP_MAC_ARRAYS_LENGTH);
+#endif
                             unsigned char *payload = (unsigned char *)(udp_hdr + 1);
                             rte_be16_t length = udp_hdr->dgram_len;
                             size_t payload_length = htons(length) - sizeof(struct rte_udp_hdr);
