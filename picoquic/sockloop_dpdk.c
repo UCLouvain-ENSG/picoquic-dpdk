@@ -133,7 +133,7 @@
 #define RTE_TEST_RX_DESC_DEFAULT 1024
 #define RTE_TEST_TX_DESC_DEFAULT 1024
 #define IP_DEFTTL 64
-#define IP_MAC_ARRAYS_LENGTH 20
+#define IP_MAC_ARRAYS_LENGTH 256
 
 struct lcore_queue_conf
 {
