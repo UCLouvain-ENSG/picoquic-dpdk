@@ -217,7 +217,11 @@ void usage()
     fprintf(stderr, "  -r                    (dpdk only) Affinitize bound address to queues using rte_flow.\n");
     fprintf(stderr, "  -u nb                 trigger key update after receiving <nb> packets on client\n");
     fprintf(stderr, "  -1                    Once: close the server after processing 1 connection.\n");
-
+    fprintf(stderr, "DPDK only : \n");
+    fprintf(stderr, "  -X                    Change adresses of the client (usefull for RSS testing)\n");
+    fprintf(stderr, "  -@ size               Specify the size of batches for the RX side\n");
+    fprintf(stderr, "  -* size               Specify the size of batches for the TX side\n");
+    fprintf(stderr, "  -A mac                Used by the client to specify the mac adresse of the server\n");
     fprintf(stderr, "\nThe scenario argument specifies the set of files that should be retrieved,\n");
     fprintf(stderr, "and their order. The syntax is:\n");
     fprintf(stderr, "  *{[<stream_id>':'[<previous_stream>':'[<format>:]]]path;}\n");

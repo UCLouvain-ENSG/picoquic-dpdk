@@ -2,6 +2,25 @@
 
 This repository is a fork of the picoquic project, which aims to provide a high-performing QUIC stack by bypassing the kernel networking stack using the DPDK library. To use this fork, you need to install the DPDK library first. This project is part of an ongoing effort to ease the performance evaluation of QUIC and TCP stacks. You can find the repository containing the different experiments and measurements [here](https://github.com/UCLouvain-ENSG/picoquic-dpdk-experiments).
 
+
+# Hello world
+
+To get started, you can use the following command for the server :
+
+```
+sudo LD_LIBRARY_PATH=$LD_LIBRARY_PATH ./dpdk_picoquicdemo --dpdk -l 2-3 -a 0000:18:00.0 --  -* 32 -@ 32 -p 4443 -1
+```
+
+and this for the client 
+
+```
+sudo LD_LIBRARY_PATH=$LD_LIBRARY_PATH ./dpdk_picoquicdemo --dpdk -l 2-3 -a 0000:18:00.0 -- -D -A 50:6b:4b:f3:7c:70 -* 32 -@ 32 10.100.0.2 4443 /20000000000
+```
+
+To get more information about the arguments of dpdk_picoquicdemo you can use ./dpdk_picoquicdemo --nodpdk -h.
+
+
+
 # picoquic
 
 Minimalist implementation of the QUIC protocol, as defined by the IETF.
