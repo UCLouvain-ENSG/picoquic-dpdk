@@ -8,18 +8,32 @@ This repository is a fork of the picoquic project, which aims to provide a high-
 To get started, you can use the following command for the server :
 
 ```
-sudo LD_LIBRARY_PATH=$LD_LIBRARY_PATH ./dpdk_picoquicdemo --dpdk -l 2-3 -a 0000:18:00.0 --  -* 32 -@ 32 -p 4443 -1
+sudo LD_LIBRARY_PATH=$LD_LIBRARY_PATH ./dpdk_picoquicdemo --dpdk -l 2-3 -a 0000:18:00.0 -- -p 4443 -1
 ```
 
 and this for the client 
 
 ```
-sudo LD_LIBRARY_PATH=$LD_LIBRARY_PATH ./dpdk_picoquicdemo --dpdk -l 2-3 -a 0000:18:00.0 -- -D -A 50:6b:4b:f3:7c:70 -* 32 -@ 32 10.100.0.2 4443 /20000000000
+sudo LD_LIBRARY_PATH=$LD_LIBRARY_PATH ./dpdk_picoquicdemo --dpdk -l 2-3 -a 0000:18:00.0 -- -D -A 50:6b:4b:f3:7c:70 10.100.0.2 4443 /20000000000
 ```
 
 To get more information about the arguments of dpdk_picoquicdemo you can use ./dpdk_picoquicdemo --nodpdk -h.
 
 
+# Multi-threaded server and client
+
+picoquic-dpdk provides a server that can take advantage of multiple cores. It uses a sharding approach combined with RSS to distribute the load between the different CPU cores. Currently, the multi-threaded server doesn't support connection migration or multipath. You must specify N+1 cores to the -l argument to launch the server on N cores. E.g., using -l 0-5 will launch the server on 5 cores. 
+
+
+```
+sudo LD_LIBRARY_PATH=$LD_LIBRARY_PATH ./dpdk_picoquicdemo --dpdk -l 0-5 -a 0000:18:00.0 -- -p 4443
+```
+
+On the client-side it is possible to launch multiple clients, on multiple NICs. During our testing we combined it with SR-IOV to simulate multiple clients
+
+```
+sudo LD_LIBRARY_PATH=$LD_LIBRARY_PATH ./dpdk_picoquicdemo --dpdk -l 0-5 -a 0000:18:00.2 -a 0000:18:00.3 -a 0000:18:00.4 -a 0000:18:00.5 -a 0000:18:00.6 -- -X -D -A 50:6b:4b:f3:7c:70 -N 5 10.100.0.2 4443 /20000000000
+```
 
 # picoquic
 
